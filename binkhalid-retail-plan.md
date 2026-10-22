@@ -365,7 +365,7 @@ After launch: 15 days of free bug fixes. New features or changes after that are 
 - Keep the UI fast at the counter: no full-page reloads while billing, keyboard-friendly, large touch targets. Test every screen at tablet width, and the lookup screens at phone width (375px): cards stack, tables scroll sideways inside their card, and the page itself never scrolls sideways. On phones the sidebar becomes a drawer opened from the top bar.
 - Accessible markup: real `<button>`, `<label>`, visible focus styles.
 - No secrets in the repo. Use `.env` with a committed `.env.example`.
-- Small commits, one phase per branch or tag. Update the checklist in this file as items are done.
+- Small commits, made directly on `main` for now. Tag the end of each phase (`phase-1`, `phase-2`, …). Update the checklist in this file as items are done.
 
 ## 9. Suggested folder structure
 
