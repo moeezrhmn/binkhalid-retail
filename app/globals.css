@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Bin Khalid brand: dark green sidebar, gold accent, white cards */
+  --color-brand-50: #eef6f2;
+  --color-brand-100: #d5e9df;
+  --color-brand-600: #1f6b4f;
+  --color-brand-700: #17573f;
+  --color-brand-800: #114331;
+  --color-brand-900: #0c3326;
+  --color-brand-950: #07231a;
+
+  --color-gold-300: #ecd48a;
+  --color-gold-400: #e2c060;
+  --color-gold-500: #c9a227;
+  --color-gold-600: #a6841c;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-gray-50);
+  color: var(--color-gray-900);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold-500);
+  outline-offset: 2px;
+}

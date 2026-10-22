@@ -16,23 +16,23 @@ More product types will be added later, so the product model must be **flexible,
 
 **The most important feature is barcodes.** Every sellable variant gets a unique code and a printable barcode label, so the cashier can bill by scanning. Everything else supports that.
 
-**Contract:** the client approved the *Project Scope Document – Bin Khalid POS* (15 Oct 2026). That document defines what we deliver. Anything not in it is a change request, so do not build it without asking.
+**Contract:** the client approved the _Project Scope Document – Bin Khalid POS_ (15 Oct 2026). That document defines what we deliver. Anything not in it is a change request, so do not build it without asking.
 
 ## 2. Fixed decisions (do not change without asking)
 
-| Topic | Decision |
-|---|---|
-| Framework | Next.js (App Router), TypeScript |
-| Database | PostgreSQL |
-| ORM | Prisma |
-| Users | **One admin account only** (for now), plus staff accounts the admin creates. Admin and staff share one `User` table. Only two fixed types: ADMIN (everything) and STAFF (billing only). No custom roles or per-feature permissions |
-| Devices | Computer or tablet at the counter. Every screen must work on both |
-| Branches | Single branch. No multi-branch fields anywhere |
-| Connectivity | Always online. No offline mode, no service workers |
-| Currency | PKR, shown as `Rs 1,500`. Store money as **integer rupees** |
-| Language | English UI only |
-| Hosting | Single VPS, Docker Compose (app + postgres), HTTPS, daily backups |
-| Timeline | 2 to 3 weeks total |
+| Topic        | Decision                                                                                                                                                                                                                                                          |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework    | Next.js (App Router), TypeScript                                                                                                                                                                                                                                  |
+| Database     | PostgreSQL                                                                                                                                                                                                                                                        |
+| ORM          | Prisma                                                                                                                                                                                                                                                            |
+| Users        | **One admin account only** (for now), plus staff accounts the admin creates. Admin and staff share one `User` table. Only two fixed types: ADMIN (everything) and STAFF (billing only). No custom roles or per-feature permissions                                |
+| Devices      | Computer or tablet at the counter. Every screen must work on both. On a phone, the owner can do lookups only: Dashboard, Reports, Inventory stock check, Customers balances, Sales bill lookup. POS, Barcode Labels and product entry are not designed for phones |
+| Branches     | Single branch. No multi-branch fields anywhere                                                                                                                                                                                                                    |
+| Connectivity | Always online. No offline mode, no service workers                                                                                                                                                                                                                |
+| Currency     | PKR, shown as `Rs 1,500`. Store money as **integer rupees**                                                                                                                                                                                                       |
+| Language     | English UI only                                                                                                                                                                                                                                                   |
+| Hosting      | Single VPS, Docker Compose (app + postgres), HTTPS, daily backups                                                                                                                                                                                                 |
+| Timeline     | 2 to 3 weeks total                                                                                                                                                                                                                                                |
 
 Assumptions I made that are easy to change: Prisma as ORM, Tailwind for styling, Code 128 barcodes, browser printing (no native print driver), signed-cookie session for login. If any of these cause a problem, say so and propose an alternative rather than silently switching.
 
@@ -131,7 +131,7 @@ Rules for the model:
   - A held bill has no `billNo`. It gets one only when completed, so bill numbers have no gaps.
   - Add a unique index on `(categoryId, codeSeq)` on `Product`.
 - **Bill discount split:** when a sale completes, split `Sale.discount` across the items in proportion to their `lineTotal`, and save each item's part as `billDiscountShare`.
-  - Shares must add up exactly to the bill discount: round in `lib/money.ts` and put any leftover rupee on the largest line.
+  - Shares must add up exactly to the bill discount: round down in `lib/money.ts`, then give the leftover rupees one each to the lines with the largest remainders, so no line ever gets more discount than its own total.
   - `netTotal = lineTotal − billDiscountShare`, and it is what the customer actually paid for that line.
   - Product, category and profit reports, and refunds, all use `netTotal`.
 - **Returns:**
@@ -170,6 +170,7 @@ CAP-0012-BLK-M
 ```
 
 Main rules (these stay the same whatever the format becomes):
+
 - All code generation lives in one function, `lib/codes.ts`, so changing the format later is a one-file change.
 - Every variant gets a unique code when it is saved. A duplicate fails with a clear error and is never fixed silently.
 - Codes are never regenerated automatically, so printed labels keep working.
@@ -204,17 +205,20 @@ When the admin creates a product, they pick a category, the attribute fields app
 Sidebar navigation: Dashboard, POS / Billing, Sales (bill history, reprint, returns), Products, Barcode Labels, Inventory, Customers, Reports, Settings (shop details, receipt text, label size, staff accounts). Staff users see only POS / Billing. A reference mockup image of all screens exists (`bin-khalid-screens.jpg`). Follow its layout and style, which is a dark green sidebar with a gold active item and clean white cards, but do not copy its sample data.
 
 ### 6.1 Login
+
 - One screen: username and password. On success, redirect the admin to Dashboard and staff to POS.
 - All routes except `/login` require a valid session. Add basic rate limiting on login attempts.
 - Admin credentials come from the seed script, with the initial password from an environment variable.
 - The session stores the user id and type. Every page, server action and route handler checks the type on the server, not just the sidebar.
 
 ### 6.1a Access by user type
+
 - **ADMIN:** everything.
 - **STAFF:** POS / Billing only. That covers scanning, cart, discounts, payments, completing sales, hold/resume, reprinting receipts, and finding or quick-adding the customer. Staff cannot see cost price or profit, and cannot open Products, Inventory, Customers, Reports, Dashboard, Settings, returns, the cash register, or cash out and expenses.
 - **Staff accounts (Settings, admin only):** create (name, username, password), reset password, deactivate. A deactivated user cannot log in, and their existing sessions stop working.
 
 ### 6.2 Products
+
 - Category list management (add, edit, deactivate), including the attribute definitions per category, so new product types need no code changes.
 - Product list with search, category filter chips, stock total, and low-stock highlighting.
 - Product detail: edit product, see all variants with code, color, size, price, stock. Actions: add variant, print labels, deactivate.
@@ -223,6 +227,7 @@ Sidebar navigation: Dashboard, POS / Billing, Sales (bill history, reprint, retu
 - Units: piece, bottle, meter, ml, gram, and others added later.
 
 #### Fast product entry
+
 The client enters hundreds of products by hand, with no import. Entry speed is a core requirement, not polish.
 
 - **Quick add grid** (for single-variant products like perfumes and honey): a spreadsheet-style table.
@@ -238,6 +243,7 @@ The client enters hundreds of products by hand, with no import. Entry speed is a
 - **Labels after entry:** the Barcode Labels page has an "Added today" filter, to print labels for everything entered in the session in one go.
 
 ### 6.3 POS / Billing
+
 - Big scan/search field at the top (scan, or search by name or code), cart table below (item, price, qty stepper, line discount, line total, remove item).
 - When a product has a discount, it fills in as the line discount automatically. The cashier can change it.
 - Right panel: customer (required on every sale), salesperson (the logged-in user, shown, not editable), subtotal, bill discount, total, payment method buttons, cash received and change, **Complete sale and print receipt**, **Hold this bill**.
@@ -262,6 +268,7 @@ The client enters hundreds of products by hand, with no import. Entry speed is a
   - Past sessions can be viewed and printed.
 
 ### 6.4 Inventory
+
 - Stock levels table with search, a Low stock filter, status badge, and last-updated.
 - **Stock in:** pick variants and quantities, optional supplier, optional new cost price, then offer label printing.
 - **Adjust stock:** quantity change with a **required reason** (damage, loss, count correction).
@@ -270,11 +277,13 @@ The client enters hundreds of products by hand, with no import. Entry speed is a
 - Supplier records (simple list).
 
 ### 6.5 Customers and credit (udhaar)
+
 - Customer list with search by name or phone, and balance due.
 - Customer detail: purchase history, statement (udhaar sales, returns and payments received, in date order), **receive payment** action (writes a `CREDIT_RECEIVED` row with the method used), printable statement.
 - Balance is derived from `CashFlow`, never stored separately. When creating a customer, the admin can enter their old udhaar from the previous system. It is saved as an `OPENING_BALANCE` row.
 
 ### 6.6 Dashboard and reports
+
 - Date range controls: Today, This week, This month, custom.
 - KPIs: sales, number of bills, profit (sale price minus snapshot cost), credit outstanding.
 - Charts: sales over the last 7 days, sales by category.
@@ -288,15 +297,17 @@ The client enters hundreds of products by hand, with no import. Entry speed is a
 Work phase by phase. Finish and verify each phase before starting the next. Commit at the end of each phase with a clear message. Each phase ends with a client review and approval (milestone).
 
 ### Phase 1: Foundation (days 1 to 3)
+
 - [ ] Send the client the minimum requirements for the barcode scanner, label printer and receipt printer. The client chooses and buys the models; they must arrive before Phase 5 testing. Everything else (computer, internet, power) is already in place at the shop.
-- [ ] Create Next.js + TypeScript + Tailwind project, ESLint, Prettier
-- [ ] Docker Compose with postgres for local dev
-- [ ] Prisma schema, first migration, seed script (admin user, settings, the five starting categories with attributes, sample products)
-- [ ] Login, session, route protection by user type (admin / staff), logout
-- [ ] App shell: sidebar layout matching the mockup, shared UI components
-- [ ] `lib/money.ts` (rounding, bill discount split), `lib/codes.ts`, `lib/dates.ts` (Pakistan time ranges) with unit tests
+- [x] Create Next.js + TypeScript + Tailwind project, ESLint, Prettier
+- [x] Local PostgreSQL database `binkhalid_retail` for development (no Docker)
+- [x] Prisma schema, first migration, seed script (admin user, settings, the five starting categories with attributes, sample products)
+- [x] Login, session, route protection by user type (admin / staff), logout
+- [x] App shell: sidebar layout (drawer on phones), shared UI components
+- [x] `lib/money.ts` (rounding, bill discount split), `lib/codes.ts`, `lib/dates.ts` (Pakistan time ranges) with unit tests
 
 ### Phase 2: Products and barcodes (days 4 to 6)
+
 - [ ] Category and attribute management
 - [ ] Product create/edit with variant combination generator, automatic codes, optional product discount and image
 - [ ] Fast entry: quick add grid, fill all, duplicate product, save and add another, keyboard shortcuts
@@ -305,6 +316,7 @@ Work phase by phase. Finish and verify each phase before starting the next. Comm
 - [ ] Verify: generated code scans correctly with a real scanner or a phone scanner app
 
 ### Phase 3: POS and stock (days 7 to 11)
+
 - [ ] Inventory: stock levels, stock in, adjustments, movement ledger, low-stock logic
 - [ ] POS cart with scan flow and focus handling
 - [ ] Discounts (line, bill, product default), payment methods, split payments, cash and change
@@ -318,12 +330,14 @@ Work phase by phase. Finish and verify each phase before starting the next. Comm
 - [ ] Tests: sale completion, stock never going out of sync with movements, split payments, return restocking
 
 ### Phase 4: Customers, credit and reporting (days 12 to 15)
+
 - [ ] Customers CRUD, credit charge and payment flows, statements
 - [ ] Dashboard KPIs, charts and tables
 - [ ] All reports with date filters, Excel export and print/PDF view (including sales by staff and slow-moving products)
 - [ ] Daily cash summary
 
 ### Phase 5: Polish and launch (days 16 to 18)
+
 - [ ] Empty states, loading states, error messages, confirm dialogs for destructive actions
 - [ ] Set up and test the client's barcode scanner, label printer and receipt printer at the shop. Integration stays model-independent:
   - **Scanner:** read as keyboard input.
@@ -342,7 +356,7 @@ After launch: 15 days of free bug fixes. New features or changes after that are 
 - Snapshot names, codes, prices and cost on `SaleItem` so renaming or repricing a product never alters old bills or reports.
 - Soft-delete only (`isActive`). Do not hard-delete products, variants or customers that have history.
 - Pagination on every list that can grow (sales, movements, customers).
-- Keep the UI fast at the counter: no full-page reloads while billing, keyboard-friendly, large touch targets. Test every screen at tablet width.
+- Keep the UI fast at the counter: no full-page reloads while billing, keyboard-friendly, large touch targets. Test every screen at tablet width, and the lookup screens at phone width (375px): cards stack, tables scroll sideways inside their card, and the page itself never scrolls sideways. On phones the sidebar becomes a drawer opened from the top bar.
 - Accessible markup: real `<button>`, `<label>`, visible focus styles.
 - No secrets in the repo. Use `.env` with a committed `.env.example`.
 - Small commits, one phase per branch or tag. Update the checklist in this file as items are done.

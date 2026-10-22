@@ -1,0 +1,313 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Unit {
+  PIECE
+  BOTTLE
+  METER
+  ML
+  GRAM
+}
+
+enum AttributeType {
+  TEXT
+  OPTION
+}
+
+enum DiscountType {
+  AMOUNT
+  PERCENT
+}
+
+enum StockMovementType {
+  STOCK_IN
+  SALE
+  RETURN
+  ADJUSTMENT
+}
+
+enum SaleStatus {
+  HELD
+  COMPLETED
+}
+
+enum CashFlowType {
+  SALE
+  REFUND
+  CREDIT_RECEIVED
+  OPENING_BALANCE
+  CASH_OUT
+  EXPENSE
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+  JAZZCASH
+  EASYPAISA
+  CREDIT
+  EXCHANGE
+}
+
+enum ReturnType {
+  RETURN
+  EXCHANGE
+}
+
+enum UserType {
+  ADMIN
+  STAFF
+}
+
+model Category {
+  id          Int                 @id @default(autoincrement())
+  name        String              @unique
+  codePrefix  String              @unique
+  defaultUnit Unit
+  isActive    Boolean             @default(true)
+  sortOrder   Int                 @default(0)
+  createdAt   DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime            @updatedAt @db.Timestamptz(3)
+  attributes  CategoryAttribute[]
+  products    Product[]
+}
+
+model CategoryAttribute {
+  id          Int           @id @default(autoincrement())
+  categoryId  Int
+  category    Category      @relation(fields: [categoryId], references: [id])
+  name        String
+  type        AttributeType
+  options     String[]
+  codeAbbrevs Json          @default("{}")
+  usedInCode  Boolean       @default(true)
+  sortOrder   Int           @default(0)
+
+  @@unique([categoryId, name])
+}
+
+model Product {
+  id            Int           @id @default(autoincrement())
+  categoryId    Int
+  category      Category      @relation(fields: [categoryId], references: [id])
+  name          String
+  description   String?
+  imageUrl      String?
+  unit          Unit
+  codeSeq       Int
+  discountType  DiscountType?
+  discountValue Int?
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime      @updatedAt @db.Timestamptz(3)
+  variants      Variant[]
+
+  @@unique([categoryId, codeSeq])
+  @@index([name])
+}
+
+model Variant {
+  id         Int              @id @default(autoincrement())
+  productId  Int
+  product    Product          @relation(fields: [productId], references: [id])
+  code       String           @unique
+  attributes Json             @default("{}")
+  costPrice  Int
+  salePrice  Int
+  stockQty   Decimal          @default(0) @db.Decimal(12, 3)
+  minStock   Decimal          @default(0) @db.Decimal(12, 3)
+  isActive   Boolean          @default(true)
+  createdAt  DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime         @updatedAt @db.Timestamptz(3)
+  movements  StockMovement[]
+  saleItems  SaleItem[]
+  returns    SaleReturnItem[]
+
+  @@index([productId])
+}
+
+model Supplier {
+  id        Int             @id @default(autoincrement())
+  name      String
+  phone     String?
+  notes     String?
+  createdAt DateTime        @default(now()) @db.Timestamptz(3)
+  movements StockMovement[]
+}
+
+model StockMovement {
+  id           Int               @id @default(autoincrement())
+  variantId    Int
+  variant      Variant           @relation(fields: [variantId], references: [id])
+  type         StockMovementType
+  qty          Decimal           @db.Decimal(12, 3)
+  unitCost     Int?
+  reason       String?
+  supplierId   Int?
+  supplier     Supplier?         @relation(fields: [supplierId], references: [id])
+  saleId       Int?
+  sale         Sale?             @relation(fields: [saleId], references: [id])
+  saleReturnId Int?
+  saleReturn   SaleReturn?       @relation(fields: [saleReturnId], references: [id])
+  createdAt    DateTime          @default(now()) @db.Timestamptz(3)
+
+  @@index([variantId, createdAt])
+  @@index([saleId])
+  @@index([saleReturnId])
+}
+
+model Customer {
+  id        Int        @id @default(autoincrement())
+  name      String
+  phone     String?    @unique
+  notes     String?
+  createdAt DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime   @updatedAt @db.Timestamptz(3)
+  sales     Sale[]
+  cashFlows CashFlow[]
+
+  @@index([name])
+}
+
+model Sale {
+  id             Int             @id @default(autoincrement())
+  billNo         Int?            @unique
+  status         SaleStatus
+  customerId     Int?
+  customer       Customer?       @relation(fields: [customerId], references: [id])
+  userId         Int
+  user           User            @relation(fields: [userId], references: [id])
+  subtotal       Int
+  discount       Int             @default(0)
+  total          Int
+  cashReceived   Int?
+  changeGiven    Int?
+  note           String?
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+  completedAt    DateTime?       @db.Timestamptz(3)
+  items          SaleItem[]
+  cashFlows      CashFlow[]
+  movements      StockMovement[]
+  returns        SaleReturn[]    @relation("OriginalSale")
+  exchangeReturn SaleReturn[]    @relation("ExchangeSale")
+
+  @@index([status, completedAt])
+  @@index([customerId])
+  @@index([userId])
+}
+
+model SaleItem {
+  id                Int              @id @default(autoincrement())
+  saleId            Int
+  sale              Sale             @relation(fields: [saleId], references: [id])
+  variantId         Int
+  variant           Variant          @relation(fields: [variantId], references: [id])
+  nameSnapshot      String
+  codeSnapshot      String
+  costSnapshot      Int
+  priceSnapshot     Int
+  qty               Decimal          @db.Decimal(12, 3)
+  discount          Int              @default(0)
+  lineTotal         Int
+  billDiscountShare Int              @default(0)
+  netTotal          Int
+  returnItems       SaleReturnItem[]
+
+  @@index([saleId])
+  @@index([variantId])
+}
+
+model CashFlow {
+  id           Int           @id @default(autoincrement())
+  type         CashFlowType
+  method       PaymentMethod
+  amount       Int
+  saleId       Int?
+  sale         Sale?         @relation(fields: [saleId], references: [id])
+  saleReturnId Int?
+  saleReturn   SaleReturn?   @relation(fields: [saleReturnId], references: [id])
+  customerId   Int?
+  customer     Customer?     @relation(fields: [customerId], references: [id])
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id])
+  note         String?
+  createdAt    DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@index([createdAt, method])
+  @@index([customerId])
+  @@index([saleId])
+  @@index([saleReturnId])
+}
+
+model SaleReturn {
+  id             Int              @id @default(autoincrement())
+  returnNo       Int              @unique
+  originalSaleId Int?
+  originalSale   Sale?            @relation("OriginalSale", fields: [originalSaleId], references: [id])
+  exchangeSaleId Int?
+  exchangeSale   Sale?            @relation("ExchangeSale", fields: [exchangeSaleId], references: [id])
+  type           ReturnType
+  refundAmount   Int
+  createdAt      DateTime         @default(now()) @db.Timestamptz(3)
+  items          SaleReturnItem[]
+  cashFlows      CashFlow[]
+  movements      StockMovement[]
+
+  @@index([originalSaleId])
+}
+
+model SaleReturnItem {
+  id           Int        @id @default(autoincrement())
+  saleReturnId Int
+  saleReturn   SaleReturn @relation(fields: [saleReturnId], references: [id])
+  saleItemId   Int?
+  saleItem     SaleItem?  @relation(fields: [saleItemId], references: [id])
+  variantId    Int
+  variant      Variant    @relation(fields: [variantId], references: [id])
+  qty          Decimal    @db.Decimal(12, 3)
+  amount       Int
+  restock      Boolean
+
+  @@index([saleReturnId])
+  @@index([saleItemId])
+}
+
+model CashSession {
+  id           Int       @id @default(autoincrement())
+  openedAt     DateTime  @default(now()) @db.Timestamptz(3)
+  openingCash  Int
+  closedAt     DateTime? @db.Timestamptz(3)
+  expectedCash Int?
+  countedCash  Int?
+  note         String?
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  name         String
+  type         UserType
+  username     String     @unique
+  passwordHash String
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+  sales        Sale[]
+  cashFlows    CashFlow[]
+}
+
+model Counter {
+  key   String @id
+  value Int    @default(0)
+}
+
+model Setting {
+  key   String @id
+  value String
+}
