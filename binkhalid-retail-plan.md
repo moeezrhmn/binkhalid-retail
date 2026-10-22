@@ -31,7 +31,7 @@ More product types will be added later, so the product model must be **flexible,
 | Connectivity | Always online. No offline mode, no service workers                                                                                                                                                                                                                |
 | Currency     | PKR, shown as `Rs 1,500`. Store money as **integer rupees**                                                                                                                                                                                                       |
 | Language     | English UI only                                                                                                                                                                                                                                                   |
-| Hosting      | Single VPS, Docker Compose (app + postgres), HTTPS, daily backups                                                                                                                                                                                                 |
+| Hosting      | Single VPS, no Docker. The Next.js app runs under PM2 (`next start`, one instance), PostgreSQL is installed on the server, and a reverse proxy (e.g. Nginx) provides HTTPS. Daily backups |
 | Timeline     | 2 to 3 weeks total                                                                                                                                                                                                                                                |
 
 Assumptions I made that are easy to change: Prisma as ORM, Tailwind for styling, Code 128 barcodes, browser printing (no native print driver), signed-cookie session for login. If any of these cause a problem, say so and propose an alternative rather than silently switching.
@@ -300,7 +300,7 @@ Work phase by phase. Finish and verify each phase before starting the next. Comm
 
 - [ ] Send the client the minimum requirements for the barcode scanner, label printer and receipt printer. The client chooses and buys the models; they must arrive before Phase 5 testing. Everything else (computer, internet, power) is already in place at the shop.
 - [x] Create Next.js + TypeScript + Tailwind project, ESLint, Prettier
-- [x] Local PostgreSQL database `binkhalid_retail` for development (no Docker)
+- [x] Local PostgreSQL database `binkhalid_retail` for development
 - [x] Prisma schema, first migration, seed script (admin user, settings, the five starting categories with attributes, sample products)
 - [x] Login, session, route protection by user type (admin / staff), logout
 - [x] App shell: sidebar layout (drawer on phones), shared UI components
@@ -342,7 +342,12 @@ Work phase by phase. Finish and verify each phase before starting the next. Comm
 - [ ] Set up and test the client's barcode scanner, label printer and receipt printer at the shop. Integration stays model-independent:
   - **Scanner:** read as keyboard input.
   - **Printers:** use the browser print with the model's own driver. Adjust the label and receipt sizes in Settings to match the actual paper.
-- [ ] Production Docker setup, environment variables, HTTPS, daily database backup script that copies backups and product images off the server, backup restore test
+- [ ] Production setup on the VPS:
+  - PM2 with `ecosystem.config.cjs`: restart on crash and after a server reboot (`pm2 startup` + `pm2 save`).
+  - Environment variables in `.env` on the server.
+  - HTTPS through the reverse proxy.
+  - Each release runs `npm ci`, `npm run db:deploy`, `npm run build`, `pm2 reload`.
+- [ ] Daily database backup script (`pg_dump`) that copies backups and product images off the server, plus a backup restore test
 - [ ] Launch walkthrough with the client
 
 After launch: 15 days of free bug fixes. New features or changes after that are change requests.

@@ -35,3 +35,29 @@ Stack: Next.js 16 (App Router), TypeScript, Tailwind CSS 4, Prisma 7, PostgreSQL
 
 Sample products are only seeded outside production and only into an empty
 product table. Set `SEED_SAMPLE_DATA=false` to skip them.
+
+## Production (VPS with PM2)
+
+The app runs with `next start` under PM2, with PostgreSQL on the same server
+and a reverse proxy (e.g. Nginx) in front for HTTPS.
+
+First deploy:
+
+```bash
+npm ci
+npm run db:deploy
+npm run db:seed        # creates the admin; no sample data in production
+npm run build
+pm2 start ecosystem.config.cjs
+pm2 save && pm2 startup   # restart the app after a server reboot
+```
+
+Each release:
+
+```bash
+git pull
+npm ci
+npm run db:deploy
+npm run build
+pm2 reload binkhalid-retail
+```
