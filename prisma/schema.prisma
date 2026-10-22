@@ -67,7 +67,7 @@ enum UserType {
 }
 
 model Category {
-  id          Int                 @id @default(autoincrement())
+  id          String              @id @default(uuid(7)) @db.Uuid
   name        String              @unique
   codePrefix  String              @unique
   defaultUnit Unit
@@ -80,8 +80,8 @@ model Category {
 }
 
 model CategoryAttribute {
-  id          Int           @id @default(autoincrement())
-  categoryId  Int
+  id          String        @id @default(uuid(7)) @db.Uuid
+  categoryId  String        @db.Uuid
   category    Category      @relation(fields: [categoryId], references: [id])
   name        String
   type        AttributeType
@@ -94,8 +94,8 @@ model CategoryAttribute {
 }
 
 model Product {
-  id            Int           @id @default(autoincrement())
-  categoryId    Int
+  id            String        @id @default(uuid(7)) @db.Uuid
+  categoryId    String        @db.Uuid
   category      Category      @relation(fields: [categoryId], references: [id])
   name          String
   description   String?
@@ -114,8 +114,8 @@ model Product {
 }
 
 model Variant {
-  id         Int              @id @default(autoincrement())
-  productId  Int
+  id         String           @id @default(uuid(7)) @db.Uuid
+  productId  String           @db.Uuid
   product    Product          @relation(fields: [productId], references: [id])
   code       String           @unique
   attributes Json             @default("{}")
@@ -134,7 +134,7 @@ model Variant {
 }
 
 model Supplier {
-  id        Int             @id @default(autoincrement())
+  id        String          @id @default(uuid(7)) @db.Uuid
   name      String
   phone     String?
   notes     String?
@@ -143,18 +143,18 @@ model Supplier {
 }
 
 model StockMovement {
-  id           Int               @id @default(autoincrement())
-  variantId    Int
+  id           String            @id @default(uuid(7)) @db.Uuid
+  variantId    String            @db.Uuid
   variant      Variant           @relation(fields: [variantId], references: [id])
   type         StockMovementType
   qty          Decimal           @db.Decimal(12, 3)
   unitCost     Int?
   reason       String?
-  supplierId   Int?
+  supplierId   String?           @db.Uuid
   supplier     Supplier?         @relation(fields: [supplierId], references: [id])
-  saleId       Int?
+  saleId       String?           @db.Uuid
   sale         Sale?             @relation(fields: [saleId], references: [id])
-  saleReturnId Int?
+  saleReturnId String?           @db.Uuid
   saleReturn   SaleReturn?       @relation(fields: [saleReturnId], references: [id])
   createdAt    DateTime          @default(now()) @db.Timestamptz(3)
 
@@ -164,7 +164,7 @@ model StockMovement {
 }
 
 model Customer {
-  id        Int        @id @default(autoincrement())
+  id        String     @id @default(uuid(7)) @db.Uuid
   name      String
   phone     String?    @unique
   notes     String?
@@ -177,12 +177,12 @@ model Customer {
 }
 
 model Sale {
-  id             Int             @id @default(autoincrement())
+  id             String          @id @default(uuid(7)) @db.Uuid
   billNo         Int?            @unique
   status         SaleStatus
-  customerId     Int?
+  customerId     String?         @db.Uuid
   customer       Customer?       @relation(fields: [customerId], references: [id])
-  userId         Int
+  userId         String          @db.Uuid
   user           User            @relation(fields: [userId], references: [id])
   subtotal       Int
   discount       Int             @default(0)
@@ -204,10 +204,10 @@ model Sale {
 }
 
 model SaleItem {
-  id                Int              @id @default(autoincrement())
-  saleId            Int
+  id                String           @id @default(uuid(7)) @db.Uuid
+  saleId            String           @db.Uuid
   sale              Sale             @relation(fields: [saleId], references: [id])
-  variantId         Int
+  variantId         String           @db.Uuid
   variant           Variant          @relation(fields: [variantId], references: [id])
   nameSnapshot      String
   codeSnapshot      String
@@ -225,17 +225,17 @@ model SaleItem {
 }
 
 model CashFlow {
-  id           Int           @id @default(autoincrement())
+  id           String        @id @default(uuid(7)) @db.Uuid
   type         CashFlowType
   method       PaymentMethod
   amount       Int
-  saleId       Int?
+  saleId       String?       @db.Uuid
   sale         Sale?         @relation(fields: [saleId], references: [id])
-  saleReturnId Int?
+  saleReturnId String?       @db.Uuid
   saleReturn   SaleReturn?   @relation(fields: [saleReturnId], references: [id])
-  customerId   Int?
+  customerId   String?       @db.Uuid
   customer     Customer?     @relation(fields: [customerId], references: [id])
-  userId       Int
+  userId       String        @db.Uuid
   user         User          @relation(fields: [userId], references: [id])
   note         String?
   createdAt    DateTime      @default(now()) @db.Timestamptz(3)
@@ -247,11 +247,11 @@ model CashFlow {
 }
 
 model SaleReturn {
-  id             Int              @id @default(autoincrement())
+  id             String           @id @default(uuid(7)) @db.Uuid
   returnNo       Int              @unique
-  originalSaleId Int?
+  originalSaleId String?          @db.Uuid
   originalSale   Sale?            @relation("OriginalSale", fields: [originalSaleId], references: [id])
-  exchangeSaleId Int?
+  exchangeSaleId String?          @db.Uuid
   exchangeSale   Sale?            @relation("ExchangeSale", fields: [exchangeSaleId], references: [id])
   type           ReturnType
   refundAmount   Int
@@ -264,12 +264,12 @@ model SaleReturn {
 }
 
 model SaleReturnItem {
-  id           Int        @id @default(autoincrement())
-  saleReturnId Int
+  id           String     @id @default(uuid(7)) @db.Uuid
+  saleReturnId String     @db.Uuid
   saleReturn   SaleReturn @relation(fields: [saleReturnId], references: [id])
-  saleItemId   Int?
+  saleItemId   String?    @db.Uuid
   saleItem     SaleItem?  @relation(fields: [saleItemId], references: [id])
-  variantId    Int
+  variantId    String     @db.Uuid
   variant      Variant    @relation(fields: [variantId], references: [id])
   qty          Decimal    @db.Decimal(12, 3)
   amount       Int
@@ -280,7 +280,7 @@ model SaleReturnItem {
 }
 
 model CashSession {
-  id           Int       @id @default(autoincrement())
+  id           String    @id @default(uuid(7)) @db.Uuid
   openedAt     DateTime  @default(now()) @db.Timestamptz(3)
   openingCash  Int
   closedAt     DateTime? @db.Timestamptz(3)
@@ -290,7 +290,7 @@ model CashSession {
 }
 
 model User {
-  id           Int        @id @default(autoincrement())
+  id           String     @id @default(uuid(7)) @db.Uuid
   name         String
   type         UserType
   username     String     @unique

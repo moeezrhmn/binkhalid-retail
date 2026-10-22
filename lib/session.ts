@@ -5,7 +5,9 @@ import { jwtVerify, SignJWT } from "jose";
 export const SESSION_COOKIE = "bk_session";
 const SESSION_DAYS = 7;
 
-export type SessionPayload = { uid: number; type: "ADMIN" | "STAFF" };
+export type SessionPayload = { uid: string; type: "ADMIN" | "STAFF" };
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function secretKey() {
   const secret = process.env.SESSION_SECRET;
@@ -37,7 +39,11 @@ export async function readSession(): Promise<SessionPayload | null> {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secretKey(), { algorithms: ["HS256"] });
-    if (typeof payload.uid !== "number" || (payload.type !== "ADMIN" && payload.type !== "STAFF")) {
+    if (
+      typeof payload.uid !== "string" ||
+      !UUID.test(payload.uid) ||
+      (payload.type !== "ADMIN" && payload.type !== "STAFF")
+    ) {
       return null;
     }
     return { uid: payload.uid, type: payload.type };

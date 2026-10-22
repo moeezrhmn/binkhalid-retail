@@ -113,6 +113,7 @@ Setting
 
 Rules for the model:
 
+- Every `id` and every foreign key is a **UUID v7** (`@default(uuid(7)) @db.Uuid`), which is time-ordered and so keeps indexes fast. Numbers people read stay integers: `billNo`, `returnNo` and `codeSeq`.
 - Never edit a completed sale's items in place. Use a return/exchange.
 - `stockQty` on `Variant` is a cache. It must always equal the sum of `StockMovement.qty` for that variant. Every stock change writes a movement **in the same transaction**. Movement `qty` is signed (+ in, − out).
 - `Variant.code` is the barcode value. `Product.codeSeq` is the running number per category.

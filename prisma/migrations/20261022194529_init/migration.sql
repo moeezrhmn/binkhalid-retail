@@ -27,7 +27,7 @@ CREATE TYPE "UserType" AS ENUM ('ADMIN', 'STAFF');
 
 -- CreateTable
 CREATE TABLE "Category" (
-    "id" SERIAL NOT NULL,
+    "id" UUID NOT NULL,
     "name" TEXT NOT NULL,
     "codePrefix" TEXT NOT NULL,
     "defaultUnit" "Unit" NOT NULL,
@@ -41,8 +41,8 @@ CREATE TABLE "Category" (
 
 -- CreateTable
 CREATE TABLE "CategoryAttribute" (
-    "id" SERIAL NOT NULL,
-    "categoryId" INTEGER NOT NULL,
+    "id" UUID NOT NULL,
+    "categoryId" UUID NOT NULL,
     "name" TEXT NOT NULL,
     "type" "AttributeType" NOT NULL,
     "options" TEXT[],
@@ -55,8 +55,8 @@ CREATE TABLE "CategoryAttribute" (
 
 -- CreateTable
 CREATE TABLE "Product" (
-    "id" SERIAL NOT NULL,
-    "categoryId" INTEGER NOT NULL,
+    "id" UUID NOT NULL,
+    "categoryId" UUID NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
     "imageUrl" TEXT,
@@ -73,8 +73,8 @@ CREATE TABLE "Product" (
 
 -- CreateTable
 CREATE TABLE "Variant" (
-    "id" SERIAL NOT NULL,
-    "productId" INTEGER NOT NULL,
+    "id" UUID NOT NULL,
+    "productId" UUID NOT NULL,
     "code" TEXT NOT NULL,
     "attributes" JSONB NOT NULL DEFAULT '{}',
     "costPrice" INTEGER NOT NULL,
@@ -90,7 +90,7 @@ CREATE TABLE "Variant" (
 
 -- CreateTable
 CREATE TABLE "Supplier" (
-    "id" SERIAL NOT NULL,
+    "id" UUID NOT NULL,
     "name" TEXT NOT NULL,
     "phone" TEXT,
     "notes" TEXT,
@@ -101,15 +101,15 @@ CREATE TABLE "Supplier" (
 
 -- CreateTable
 CREATE TABLE "StockMovement" (
-    "id" SERIAL NOT NULL,
-    "variantId" INTEGER NOT NULL,
+    "id" UUID NOT NULL,
+    "variantId" UUID NOT NULL,
     "type" "StockMovementType" NOT NULL,
     "qty" DECIMAL(12,3) NOT NULL,
     "unitCost" INTEGER,
     "reason" TEXT,
-    "supplierId" INTEGER,
-    "saleId" INTEGER,
-    "saleReturnId" INTEGER,
+    "supplierId" UUID,
+    "saleId" UUID,
+    "saleReturnId" UUID,
     "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "StockMovement_pkey" PRIMARY KEY ("id")
@@ -117,7 +117,7 @@ CREATE TABLE "StockMovement" (
 
 -- CreateTable
 CREATE TABLE "Customer" (
-    "id" SERIAL NOT NULL,
+    "id" UUID NOT NULL,
     "name" TEXT NOT NULL,
     "phone" TEXT,
     "notes" TEXT,
@@ -129,11 +129,11 @@ CREATE TABLE "Customer" (
 
 -- CreateTable
 CREATE TABLE "Sale" (
-    "id" SERIAL NOT NULL,
+    "id" UUID NOT NULL,
     "billNo" INTEGER,
     "status" "SaleStatus" NOT NULL,
-    "customerId" INTEGER,
-    "userId" INTEGER NOT NULL,
+    "customerId" UUID,
+    "userId" UUID NOT NULL,
     "subtotal" INTEGER NOT NULL,
     "discount" INTEGER NOT NULL DEFAULT 0,
     "total" INTEGER NOT NULL,
@@ -148,9 +148,9 @@ CREATE TABLE "Sale" (
 
 -- CreateTable
 CREATE TABLE "SaleItem" (
-    "id" SERIAL NOT NULL,
-    "saleId" INTEGER NOT NULL,
-    "variantId" INTEGER NOT NULL,
+    "id" UUID NOT NULL,
+    "saleId" UUID NOT NULL,
+    "variantId" UUID NOT NULL,
     "nameSnapshot" TEXT NOT NULL,
     "codeSnapshot" TEXT NOT NULL,
     "costSnapshot" INTEGER NOT NULL,
@@ -166,14 +166,14 @@ CREATE TABLE "SaleItem" (
 
 -- CreateTable
 CREATE TABLE "CashFlow" (
-    "id" SERIAL NOT NULL,
+    "id" UUID NOT NULL,
     "type" "CashFlowType" NOT NULL,
     "method" "PaymentMethod" NOT NULL,
     "amount" INTEGER NOT NULL,
-    "saleId" INTEGER,
-    "saleReturnId" INTEGER,
-    "customerId" INTEGER,
-    "userId" INTEGER NOT NULL,
+    "saleId" UUID,
+    "saleReturnId" UUID,
+    "customerId" UUID,
+    "userId" UUID NOT NULL,
     "note" TEXT,
     "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -182,10 +182,10 @@ CREATE TABLE "CashFlow" (
 
 -- CreateTable
 CREATE TABLE "SaleReturn" (
-    "id" SERIAL NOT NULL,
+    "id" UUID NOT NULL,
     "returnNo" INTEGER NOT NULL,
-    "originalSaleId" INTEGER,
-    "exchangeSaleId" INTEGER,
+    "originalSaleId" UUID,
+    "exchangeSaleId" UUID,
     "type" "ReturnType" NOT NULL,
     "refundAmount" INTEGER NOT NULL,
     "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -195,10 +195,10 @@ CREATE TABLE "SaleReturn" (
 
 -- CreateTable
 CREATE TABLE "SaleReturnItem" (
-    "id" SERIAL NOT NULL,
-    "saleReturnId" INTEGER NOT NULL,
-    "saleItemId" INTEGER,
-    "variantId" INTEGER NOT NULL,
+    "id" UUID NOT NULL,
+    "saleReturnId" UUID NOT NULL,
+    "saleItemId" UUID,
+    "variantId" UUID NOT NULL,
     "qty" DECIMAL(12,3) NOT NULL,
     "amount" INTEGER NOT NULL,
     "restock" BOOLEAN NOT NULL,
@@ -208,7 +208,7 @@ CREATE TABLE "SaleReturnItem" (
 
 -- CreateTable
 CREATE TABLE "CashSession" (
-    "id" SERIAL NOT NULL,
+    "id" UUID NOT NULL,
     "openedAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "openingCash" INTEGER NOT NULL,
     "closedAt" TIMESTAMPTZ(3),
@@ -221,7 +221,7 @@ CREATE TABLE "CashSession" (
 
 -- CreateTable
 CREATE TABLE "User" (
-    "id" SERIAL NOT NULL,
+    "id" UUID NOT NULL,
     "name" TEXT NOT NULL,
     "type" "UserType" NOT NULL,
     "username" TEXT NOT NULL,

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { db } from "./db";
 import { readSession } from "./session";
 
-export type CurrentUser = { id: number; name: string; type: "ADMIN" | "STAFF" };
+export type CurrentUser = { id: string; name: string; type: "ADMIN" | "STAFF" };
 
 /**
  * The logged-in user, checked against the database on every request, so a
