@@ -25,7 +25,7 @@ More product types will be added later, so the product model must be **flexible,
 | Framework    | Next.js (App Router), TypeScript                                                                                                                                                                                                                                  |
 | Database     | PostgreSQL                                                                                                                                                                                                                                                        |
 | ORM          | Prisma                                                                                                                                                                                                                                                            |
-| Users        | **One admin account only** (for now), plus staff accounts the admin creates. Admin and staff share one `User` table. Only two fixed types: ADMIN (everything) and STAFF (billing only). No custom roles or per-feature permissions                                |
+| Users        | Admin and staff accounts in one `User` table, managed in **Settings → Users**. Only two fixed roles: ADMIN (everything) and STAFF (billing only). From Phase 5 any admin can create other admins as well as staff, and every account records who created it. No custom roles or per-feature permissions |
 | Devices      | Computer or tablet at the counter. Every screen must work on both. On a phone, the owner can do lookups only: Dashboard, Reports, Inventory stock check, Customers balances, Sales bill lookup. POS, Barcode Labels and product entry are not designed for phones |
 | Branches     | Single branch. No multi-branch fields anywhere                                                                                                                                                                                                                    |
 | Connectivity | Always online. No offline mode, no service workers                                                                                                                                                                                                                |
@@ -102,7 +102,8 @@ CashSession
   id, openedAt, openingCash Int, closedAt?, expectedCash Int?, countedCash Int?, note?
 
 User
-  id, name, type (ADMIN | STAFF), username (unique), passwordHash, isActive, createdAt
+  id, name, type (ADMIN | STAFF), username (unique), passwordHash, isActive,
+  createdById? (→ User, who created this account), sessionVersion Int, createdAt
 
 Counter
   key (unique), value Int
@@ -126,7 +127,7 @@ Rules for the model:
   - `customerId` is required only for udhaar: any row with method `CREDIT`, plus every `CREDIT_RECEIVED` and `OPENING_BALANCE` row.
   - Udhaar balance = sum of `CREDIT` rows − sum of `CREDIT_RECEIVED` rows for the customer. It is never stored.
 - `CashSession.expectedCash` = `openingCash` + sum of `CASH` rows in `CashFlow` between `openedAt` and `closedAt`. Only one session can be open at a time.
-- `User`: exactly one ADMIN, created by the seed. STAFF accounts are created by the admin and deactivated, never deleted. Each request checks that the user is still active, so a deactivated account is logged out immediately.
+- `User`: the first ADMIN is created by the seed (its `createdById` is empty). Any admin can create admins and staff, and `createdById` records who did. There must always be at least one active admin. Accounts with history are deactivated, not deleted. Each request checks that the user is still active and that the session's `sessionVersion` is current, so deactivating someone, resetting their password or changing their role logs them out at once.
 - **Counters:** bill numbers, return numbers and each category's product number come from the `Counter` table (keys like `bill`, `return`, `product:<categoryId>`; keyed by id so changing a prefix never restarts the numbering).
   - Increment them atomically inside the same transaction (`value = value + 1`). Never use "max + 1".
   - A held bill has no `billNo`. It gets one only when completed, so bill numbers have no gaps.
@@ -216,7 +217,7 @@ Sidebar navigation: Dashboard, POS / Billing, Sales (bill history, reprint, retu
 
 - **ADMIN:** everything.
 - **STAFF:** POS / Billing only. That covers scanning, cart, discounts, payments, completing sales, hold/resume, reprinting receipts, and finding or quick-adding the customer. Staff cannot see cost price or profit, and cannot open Products, Inventory, Customers, Reports, Dashboard, Settings, returns, the cash register, or cash out and expenses.
-- **Staff accounts (Settings, admin only):** create (name, username, password), reset password, deactivate. A deactivated user cannot log in, and their existing sessions stop working.
+- **Users (Settings → Users tab, admin only):** create admin or staff accounts, edit, reset password, deactivate or reactivate, delete an account that never served a bill. See Phase 5 for the full rules and the access checks.
 
 ### 6.2 Products
 
@@ -299,7 +300,7 @@ Work phase by phase. Finish and verify each phase before starting the next. Comm
 
 ### Phase 1: Foundation (days 1 to 3)
 
-- [ ] Send the client the minimum requirements for the barcode scanner, label printer and receipt printer. The client chooses and buys the models; they must arrive before Phase 5 testing. Everything else (computer, internet, power) is already in place at the shop.
+- [ ] Send the client the minimum requirements for the barcode scanner, label printer and receipt printer. The client chooses and buys the models; they must arrive before Phase 6 testing. Everything else (computer, internet, power) is already in place at the shop.
 - [x] Create Next.js + TypeScript + Tailwind project, ESLint, Prettier
 - [x] Local PostgreSQL database `binkhalid_retail` for development
 - [x] Prisma schema, first migration, seed script (admin user, settings, the five starting categories with attributes, sample products)
@@ -339,7 +340,37 @@ Work phase by phase. Finish and verify each phase before starting the next. Comm
 - [x] All reports with date filters, Excel export and print/PDF view (including sales by staff and slow-moving products)
 - [x] Daily cash summary
 
-### Phase 5: Polish and launch (days 16 to 18)
+### Phase 5: Users and access control
+
+Changes requested after Phase 4. These replace the earlier "one admin only" rule.
+
+**User management (Settings → Users tab)**
+
+- [ ] Move user management back into **Settings** as its own tab ("Users"), not a separate sidebar item. The old Settings → Staff accounts address keeps working.
+- [ ] Any admin can create **another admin** as well as staff accounts.
+- [ ] Every account records **who created it** (`User.createdById`, empty for the first admin from the seed). The users list shows "Created by".
+- [ ] Edit name, username and role (admin / staff), reset password, deactivate and reactivate.
+- [ ] Delete an account only if it never served a bill, never recorded money, has no held bills and never created other accounts. Otherwise deactivate it, so the records keep their history.
+- [ ] Safety rules:
+  - There is always at least one active admin: the last active admin cannot be deactivated, deleted or changed to staff.
+  - An admin cannot deactivate, delete or demote their own account (another admin must do it).
+- [ ] Deactivating someone, resetting their password or changing their role ends their sessions on every device (`User.sessionVersion`, checked on each request).
+- [ ] The users list shows role, status, bills served, last sale, created by and created date.
+- [ ] POS shows **"Served by: Name (Role)"** for the logged-in user. Receipts show the name.
+
+**Access control: what staff can access and view**
+
+- [ ] Write the access matrix into section 6.1a: every page, action and print view, marked Admin or Staff. Staff today: POS / Billing only (scan, cart, discounts, payments, complete, hold/resume/discard, today's bills and receipt reprint, customer search and quick add).
+- [ ] Audit every page, server action, route handler and print page: each must check the role on the server (`requireAdmin` or `requireUser`), not just hide a menu item.
+- [ ] Decide and enforce what staff see inside the POS: no cost price or profit anywhere; customer search shows name and phone only (no udhaar balances, no purchase history).
+- [ ] Automated tests:
+  - Every admin-only server action and route handler refuses a staff session.
+  - Every admin page sends staff back to the POS.
+  - The data sent to the POS never includes cost price or profit.
+  - A deactivated or role-changed user is logged out on their next request.
+- [ ] Re-check the POS customer quick add **without** a phone number (a test run stalled there; confirm whether it is an app bug).
+
+### Phase 6: Polish and launch
 
 - [ ] Empty states, loading states, error messages, confirm dialogs for destructive actions
 - [ ] Set up and test the client's barcode scanner, label printer and receipt printer at the shop. Integration stays model-independent:
@@ -400,7 +431,7 @@ After launch: 15 days of free bug fixes. New features or changes after that are 
 
 ## 10. Out of scope (do not build, even if easy)
 
-- More than one admin, custom roles, per-feature permissions, or an audit-log screen
+- Custom roles, per-feature permissions, or an audit-log screen (more than one admin is allowed from Phase 5)
 - Multiple branches or shops
 - Online store or customer-facing website
 - Mobile app
