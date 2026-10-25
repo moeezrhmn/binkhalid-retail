@@ -2,8 +2,10 @@ import "server-only";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
 
-function createClient() {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+export function createClient(connectionString = process.env.DATABASE_URL) {
+  // The driver ignores "?schema=", so pass it to the adapter (tests use a separate schema).
+  const schema = connectionString ? new URL(connectionString).searchParams.get("schema") : null;
+  const adapter = new PrismaPg({ connectionString }, schema ? { schema } : undefined);
   return new PrismaClient({ adapter });
 }
 

@@ -127,7 +127,7 @@ Rules for the model:
   - Udhaar balance = sum of `CREDIT` rows − sum of `CREDIT_RECEIVED` rows for the customer. It is never stored.
 - `CashSession.expectedCash` = `openingCash` + sum of `CASH` rows in `CashFlow` between `openedAt` and `closedAt`. Only one session can be open at a time.
 - `User`: exactly one ADMIN, created by the seed. STAFF accounts are created by the admin and deactivated, never deleted. Each request checks that the user is still active, so a deactivated account is logged out immediately.
-- **Counters:** bill numbers, return numbers and each category's product number come from the `Counter` table (keys like `bill`, `return`, `product:CAP`).
+- **Counters:** bill numbers, return numbers and each category's product number come from the `Counter` table (keys like `bill`, `return`, `product:<categoryId>`; keyed by id so changing a prefix never restarts the numbering).
   - Increment them atomically inside the same transaction (`value = value + 1`). Never use "max + 1".
   - A held bill has no `billNo`. It gets one only when completed, so bill numbers have no gaps.
   - Add a unique index on `(categoryId, codeSeq)` on `Product`.
@@ -309,12 +309,13 @@ Work phase by phase. Finish and verify each phase before starting the next. Comm
 
 ### Phase 2: Products and barcodes (days 4 to 6)
 
-- [ ] Category and attribute management
-- [ ] Product create/edit with variant combination generator, automatic codes, optional product discount and image
-- [ ] Fast entry: quick add grid, fill all, duplicate product, save and add another, keyboard shortcuts
-- [ ] Product list and detail screens, barcode lookup box
-- [ ] Barcode Labels page, SVG barcodes, print stylesheet, copies per variant
-- [ ] Verify: generated code scans correctly with a real scanner or a phone scanner app
+- [x] Category and attribute management
+- [x] Product create/edit with variant combination generator, automatic codes, optional product discount and image
+- [x] Fast entry: quick add grid, fill all, duplicate product, save and add another, keyboard shortcuts
+- [x] Product list and detail screens, barcode lookup box
+- [x] Barcode Labels page, SVG barcodes, print stylesheet, copies per variant
+- [x] Verify (automated): generated barcodes decode correctly in tests, and printed labels rendered at 300 dpi scan 6/6 (203 dpi: 5/6, see open questions)
+- [ ] Verify with a real scanner or a phone scanner app on a printed label
 
 ### Phase 3: POS and stock (days 7 to 11)
 
@@ -429,7 +430,7 @@ If something seems necessary but is on this list, or is not in the approved scop
 ## 12. Open questions for the client (confirm before Phase 2 ends)
 
 - Final barcode and code format. Not blocking: the default format is used until then.
-- Label printer model and exact label size.
+- Label printer model and exact label size. **Prefer a 300 dpi label printer.** A code like `CAP-0012-BLK-M` makes a Code 128 barcode about 47 mm wide at 0.25 mm bars, which does not fit a 50 mm label with its blank margins. Squeezed onto a 203 dpi printer, the bars come out uneven (1 of 6 test labels failed to scan; 300 dpi: 6 of 6). Alternatives: a wider label (60 mm or more), or a shorter numeric barcode value with the readable code printed under it.
 - Receipt printer model and paper width (assumed 80 mm).
 - Receipt header and footer text, shop name, address and phone.
 - Whether unstitched suits are sold by the piece, by the meter, or both.

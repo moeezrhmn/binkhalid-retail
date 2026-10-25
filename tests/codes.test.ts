@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildVariantCode, normalizeCode, toCodeSegment, type CodeAttribute } from "@/lib/codes";
+import {
+  buildVariantCode,
+  normalizeCode,
+  previewVariantCode,
+  suggestAbbrev,
+  toCodeSegment,
+  type CodeAttribute,
+} from "@/lib/codes";
 
 const size: CodeAttribute = {
   name: "Size",
@@ -90,5 +97,38 @@ describe("normalizeCode / toCodeSegment", () => {
   it("keeps only letters and digits", () => {
     expect(toCodeSegment("500 g")).toBe("500G");
     expect(toCodeSegment("Off-White")).toBe("OFFWHITE");
+  });
+});
+
+describe("suggestAbbrev", () => {
+  it("suggests readable abbreviations", () => {
+    expect(suggestAbbrev("Black")).toBe("BLK");
+    expect(suggestAbbrev("White")).toBe("WHT");
+    expect(suggestAbbrev("Maroon")).toBe("MRN");
+    expect(suggestAbbrev("Brown")).toBe("BRN");
+    expect(suggestAbbrev("Grey")).toBe("GREY");
+    expect(suggestAbbrev("M")).toBe("M");
+    expect(suggestAbbrev("500 g")).toBe("500G");
+    expect(suggestAbbrev("100 ml")).toBe("100ML");
+    expect(suggestAbbrev("Off White")).toBe("OW");
+    expect(suggestAbbrev("Navy Blue")).toBe("NB");
+  });
+});
+
+describe("previewVariantCode", () => {
+  it("shows the code with the number still to be assigned", () => {
+    expect(
+      previewVariantCode({
+        prefix: "cap",
+        attributes: [size, color],
+        values: { Size: "Medium", Color: "Black" },
+      }),
+    ).toBe("CAP-####-BLK-M");
+  });
+
+  it("marks a missing abbreviation instead of throwing", () => {
+    expect(
+      previewVariantCode({ prefix: "CAP", attributes: [color], values: { Color: "Grey" } }),
+    ).toBe("CAP-####-?");
   });
 });

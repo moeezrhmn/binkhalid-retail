@@ -191,7 +191,7 @@ async function seedCategories() {
       },
     });
     await db.counter.createMany({
-      data: [{ key: `product:${category.codePrefix}` }],
+      data: [{ key: `product:${category.id}` }],
       skipDuplicates: true,
     });
     for (const [attrIndex, attribute] of seed.attributes.entries()) {
@@ -227,7 +227,7 @@ async function seedSampleProducts() {
         include: { attributes: true },
       });
       const counter = await tx.counter.update({
-        where: { key: `product:${category.codePrefix}` },
+        where: { key: `product:${category.id}` },
         data: { value: { increment: 1 } },
       });
       const product = await tx.product.create({

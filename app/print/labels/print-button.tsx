@@ -1,0 +1,12 @@
+"use client";
+
+import { Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+export function PrintButton({ autoFocus }: { autoFocus?: boolean }) {
+  return (
+    <Button onClick={() => window.print()} autoFocus={autoFocus}>
+      <Printer className="size-4" aria-hidden /> Print
+    </Button>
+  );
+}

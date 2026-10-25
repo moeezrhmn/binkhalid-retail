@@ -9,7 +9,8 @@ Stack: Next.js 16 (App Router), TypeScript, Tailwind CSS 4, Prisma 7, PostgreSQL
 
 1. Create a PostgreSQL database named `binkhalid_retail`.
 2. Copy `.env.example` to `.env` and fill in `DATABASE_URL`, `SESSION_SECRET`
-   (`openssl rand -base64 32`) and `ADMIN_PASSWORD`.
+   (`openssl rand -base64 32`) and `ADMIN_PASSWORD`. Product images are saved in
+   `UPLOAD_DIR` (default `./uploads`); include that folder in backups.
 3. Install, migrate and seed:
 
    ```bash
@@ -27,6 +28,7 @@ Stack: Next.js 16 (App Router), TypeScript, Tailwind CSS 4, Prisma 7, PostgreSQL
 | `npm run dev`        | Development server                         |
 | `npm run build`      | Generate Prisma client and build           |
 | `npm test`           | Unit tests (Vitest)                        |
+| `npm run test:db`    | Database tests, in a separate `test` schema |
 | `npm run lint`       | ESLint                                     |
 | `npm run typecheck`  | TypeScript check                           |
 | `npm run db:migrate` | Create and apply a migration (development) |

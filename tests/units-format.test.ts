@@ -46,3 +46,11 @@ describe("normalizePhone", () => {
     expect(normalizePhone(null)).toBeNull();
   });
 });
+
+describe("validateQty with allowZero", () => {
+  it("accepts 0 for stock levels but still rejects negatives", () => {
+    expect(validateQty("PIECE", 0, { allowZero: true })).toBeNull();
+    expect(validateQty("PIECE", "-1", { allowZero: true })).toMatch(/negative/);
+    expect(validateQty("PIECE", "0.5", { allowZero: true })).toMatch(/whole/);
+  });
+});

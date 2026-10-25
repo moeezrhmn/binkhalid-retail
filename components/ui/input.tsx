@@ -1,9 +1,9 @@
 "use client";
 
-import { useId, type InputHTMLAttributes, type ReactNode } from "react";
+import { useId, type ComponentProps, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
+export function Input({ className, ...props }: ComponentProps<"input">) {
   return (
     <input
       className={cn(
@@ -17,7 +17,7 @@ export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElem
   );
 }
 
-type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
+type FieldProps = ComponentProps<"input"> & {
   label: string;
   hint?: ReactNode;
   error?: string;
