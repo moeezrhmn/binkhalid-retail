@@ -29,3 +29,17 @@ export function rangeFromParams(params: { period?: string; from?: string; to?: s
   if (period === "month") return { period, range: thisMonthRange() };
   return { period: period === "custom" ? "custom" : "today", range: todayRange() };
 }
+
+const dayFormat = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Asia/Karachi",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+/** "26 Oct 2026" or "1 Oct 2026 – 26 Oct 2026", in Pakistan time. */
+export function rangeLabel(range: DateRange) {
+  const first = dayFormat.format(range.from);
+  const last = dayFormat.format(new Date(range.to.getTime() - 1));
+  return first === last ? first : `${first} – ${last}`;
+}

@@ -18,6 +18,10 @@
   --color-gold-500: #c9a227;
   --color-gold-600: #a6841c;
 
+  /* Chart marks: brand green, validated for chroma, lightness and 3:1 contrast on white */
+  --color-chart: #1a7f55;
+  --color-chart-hover: #2b9468;
+
   /*
    * Raised buttons: a light top edge and a darker bottom edge drawn with inset
    * shadows make them look pressable; the pressed state flips to a top shadow.
@@ -42,6 +46,12 @@
 body {
   background: var(--color-gray-50);
   color: var(--color-gray-900);
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
 }
 
 :focus-visible {

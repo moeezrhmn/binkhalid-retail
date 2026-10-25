@@ -143,7 +143,7 @@ Rules for the model:
 - **Quantities:** PIECE and BOTTLE units take whole numbers only, while METER, ML and GRAM allow decimals. Validate this in one helper. Every price × qty calculation is rounded through `lib/money.ts`.
 - **Stock-in cost:** a `STOCK_IN` movement stores the `unitCost` paid, so cost history is kept even when the variant's cost price changes.
 - **Time:** the business runs on Pakistan time (`Asia/Karachi`, UTC+5).
-  - Store timestamps in UTC (`timestamptz`).
+  - Store timestamps in UTC (`timestamptz`). Every app connection runs with `TimeZone=UTC` (set in `lib/db.ts`), because the Prisma adapter sends timestamps without a zone; on a server set to Asia/Karachi they would otherwise be stored 5 hours off.
   - Calculate every "Today / This week / This month" boundary and every date filter in `Asia/Karachi`, through one helper in `lib/dates.ts`.
   - Sales reports filter on `completedAt`, not `createdAt`.
 - **Normalizing input:**
@@ -334,10 +334,10 @@ Work phase by phase. Finish and verify each phase before starting the next. Comm
 
 ### Phase 4: Customers, credit and reporting (days 12 to 15)
 
-- [ ] Customers CRUD, credit charge and payment flows, statements
-- [ ] Dashboard KPIs, charts and tables
-- [ ] All reports with date filters, Excel export and print/PDF view (including sales by staff and slow-moving products)
-- [ ] Daily cash summary
+- [x] Customers CRUD, credit charge and payment flows, statements
+- [x] Dashboard KPIs, charts and tables
+- [x] All reports with date filters, Excel export and print/PDF view (including sales by staff and slow-moving products)
+- [x] Daily cash summary
 
 ### Phase 5: Polish and launch (days 16 to 18)
 

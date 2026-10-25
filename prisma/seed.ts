@@ -4,10 +4,17 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Prisma, PrismaClient, type Unit } from "../generated/prisma/client";
 import { buildVariantCode, type CodeAttribute } from "../lib/codes";
 
+// Same connection settings as the app (UTC session, schema from "?schema=").
 const connectionString = process.env.DATABASE_URL;
 const schema = connectionString ? new URL(connectionString).searchParams.get("schema") : null;
 const db = new PrismaClient({
-  adapter: new PrismaPg({ connectionString }, schema ? { schema } : undefined),
+  adapter: new PrismaPg(
+    {
+      connectionString,
+      options: ["-c TimeZone=UTC", ...(schema ? [`-c search_path="${schema}"`] : [])].join(" "),
+    },
+    schema ? { schema } : undefined,
+  ),
 });
 
 type AttributeSeed = { name: string; options: Record<string, string> };

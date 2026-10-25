@@ -419,3 +419,26 @@ describe("cash register", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("database connection", () => {
+  it("runs hand-written SQL in the same schema as Prisma's queries", async () => {
+    const [{ schema }] = await db.$queryRaw<
+      { schema: string }[]
+    >`SELECT current_schema() AS schema`;
+    expect(schema).toBe(new URL(process.env.DATABASE_URL!).searchParams.get("schema"));
+  });
+});
+
+describe("timestamps", () => {
+  it("are stored in true UTC, whatever the database server's time zone", async () => {
+    const when = new Date("2026-10-22T19:30:00Z");
+    const supplier = await db.supplier.create({ data: { name: "Clock check", createdAt: when } });
+    const [row] = await db.$queryRaw<{ utc: string }[]>`
+      SELECT to_char("createdAt" AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI') AS utc
+      FROM "Supplier" WHERE id = ${supplier.id}::uuid`;
+    expect(row.utc).toBe("2026-10-22 19:30");
+    expect((await db.supplier.findUniqueOrThrow({ where: { id: supplier.id } })).createdAt).toEqual(
+      when,
+    );
+  });
+});
