@@ -186,3 +186,56 @@ export async function createReturn(
 ) {
   return db.$transaction((tx) => createReturnTx(tx, input));
 }
+
+/**
+ * What an exchange's returned items are worth, before anything is saved. The
+ * same rules run again when the exchange is completed.
+ */
+export async function previewExchange(
+  originalSaleId: string,
+  items: { saleItemId: string; qty: string; restock: boolean }[],
+) {
+  const sale = await db.sale.findUnique({
+    where: { id: originalSaleId },
+    include: {
+      customer: { select: { id: true, name: true, phone: true } },
+      items: { include: { returnItems: { select: { qty: true } } } },
+    },
+  });
+  if (!sale || sale.status !== "COMPLETED" || !sale.customer) return null;
+
+  const lines = items.flatMap((item) => {
+    const saleItem = sale.items.find((line) => line.id === item.saleItemId);
+    if (!saleItem) return [];
+    let qtyMilli: number;
+    try {
+      qtyMilli = qtyToMilli(item.qty);
+    } catch {
+      return [];
+    }
+    const soldMilli = qtyToMilli(saleItem.qty.toString());
+    const returnedMilli = saleItem.returnItems.reduce(
+      (sum, r) => sum + qtyToMilli(r.qty.toString()),
+      0,
+    );
+    if (qtyMilli <= 0 || qtyMilli > soldMilli - returnedMilli) return [];
+    return [
+      {
+        saleItemId: saleItem.id,
+        name: saleItem.nameSnapshot,
+        qty: item.qty,
+        restock: item.restock,
+        amount: roundDiv(saleItem.netTotal * qtyMilli, soldMilli),
+      },
+    ];
+  });
+  if (lines.length === 0) return null;
+
+  return {
+    originalSaleId: sale.id,
+    billNo: sale.billNo!,
+    customer: sale.customer,
+    items: lines,
+    credit: lines.reduce((sum, line) => sum + line.amount, 0),
+  };
+}

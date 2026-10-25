@@ -4,8 +4,10 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Prisma, PrismaClient, type Unit } from "../generated/prisma/client";
 import { buildVariantCode, type CodeAttribute } from "../lib/codes";
 
+const connectionString = process.env.DATABASE_URL;
+const schema = connectionString ? new URL(connectionString).searchParams.get("schema") : null;
 const db = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+  adapter: new PrismaPg({ connectionString }, schema ? { schema } : undefined),
 });
 
 type AttributeSeed = { name: string; options: Record<string, string> };

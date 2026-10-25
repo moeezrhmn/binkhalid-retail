@@ -15,6 +15,7 @@ import {
   Settings,
   ShoppingCart,
   Users,
+  Wallet,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -28,6 +29,7 @@ const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true },
   { href: "/pos", label: "POS / Billing", icon: ShoppingCart, adminOnly: false },
   { href: "/sales", label: "Sales", icon: ReceiptText, adminOnly: true },
+  { href: "/cash", label: "Cash Register", icon: Wallet, adminOnly: true },
   { href: "/products", label: "Products", icon: Package, adminOnly: true },
   { href: "/barcodes", label: "Barcode Labels", icon: Barcode, adminOnly: true },
   { href: "/inventory", label: "Inventory", icon: Boxes, adminOnly: true },

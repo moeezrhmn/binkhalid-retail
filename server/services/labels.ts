@@ -12,6 +12,8 @@ export type LabelVariant = {
   productName: string;
   variantText: string;
   salePrice: number;
+  costPrice: number;
+  unit: "PIECE" | "BOTTLE" | "METER" | "ML" | "GRAM";
   stockQty: string;
   /** Suggested number of labels: one per unit in stock for countable items, otherwise 1. */
   suggestedCopies: number;
@@ -56,6 +58,8 @@ function toLabelVariant(variant: VariantRow): LabelVariant {
       variant.product.category.attributes,
     ),
     salePrice: variant.salePrice,
+    costPrice: variant.costPrice,
+    unit: variant.product.unit,
     stockQty: variant.stockQty.toString(),
     suggestedCopies: whole ? Math.min(Math.max(stock, 1), MAX_SUGGESTED) : 1,
   };

@@ -7,7 +7,7 @@ import { formatRs } from "@/lib/format";
 import { MAX_LABEL_COPIES, MAX_LABEL_ITEMS } from "@/lib/labels";
 import { getSettings } from "@/lib/settings";
 import { labelVariantsByIds } from "@/server/services/labels";
-import { PrintButton } from "./print-button";
+import { PrintButton } from "@/components/print-button";
 
 export const metadata: Metadata = { title: "Print labels" };
 

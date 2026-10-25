@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 
 type DialogProps = {
@@ -14,6 +14,7 @@ type DialogProps = {
 /** Modal built on the native <dialog>: focus trapping and Escape come from the browser. */
 export function Dialog({ open, onClose, title, children, footer }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     const dialog = ref.current;
@@ -26,11 +27,11 @@ export function Dialog({ open, onClose, title, children, footer }: DialogProps) 
     <dialog
       ref={ref}
       onClose={onClose}
-      aria-labelledby="dialog-title"
+      aria-labelledby={titleId}
       className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-xl bg-white p-0 shadow-xl backdrop:bg-black/40"
     >
-      <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-        <h2 id="dialog-title" className="text-base font-semibold text-gray-900">
+      <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+        <h2 id={titleId} className="text-base font-semibold text-gray-900">
           {title}
         </h2>
         <button
@@ -42,9 +43,9 @@ export function Dialog({ open, onClose, title, children, footer }: DialogProps) 
           <X className="size-5" />
         </button>
       </div>
-      <div className="px-5 py-4">{children}</div>
+      <div className="px-4 py-3">{children}</div>
       {footer ? (
-        <div className="flex justify-end gap-2 border-t border-gray-200 px-5 py-4">{footer}</div>
+        <div className="flex justify-end gap-2 border-t border-gray-200 px-4 py-3">{footer}</div>
       ) : null}
     </dialog>
   );

@@ -203,7 +203,7 @@ When the admin creates a product, they pick a category, the attribute fields app
 
 ## 6. Modules and screens
 
-Sidebar navigation: Dashboard, POS / Billing, Sales (bill history, reprint, returns), Products, Barcode Labels, Inventory, Customers, Reports, Settings (shop details, receipt text, label size, staff accounts). Staff users see only POS / Billing. A reference mockup image of all screens exists (`bin-khalid-screens.jpg`). Follow its layout and style, which is a dark green sidebar with a gold active item and clean white cards, but do not copy its sample data.
+Sidebar navigation: Dashboard, POS / Billing, Sales (bill history, reprint, returns), Cash Register, Products, Barcode Labels, Inventory, Customers, Reports, Settings (shop details, receipt text, label size, staff accounts). Staff users see only POS / Billing. A reference mockup image of all screens exists (`bin-khalid-screens.jpg`). Follow its layout and style, which is a dark green sidebar with a gold active item and clean white cards, but do not copy its sample data.
 
 ### 6.1 Login
 
@@ -319,17 +319,18 @@ Work phase by phase. Finish and verify each phase before starting the next. Comm
 
 ### Phase 3: POS and stock (days 7 to 11)
 
-- [ ] Inventory: stock levels, stock in, adjustments, movement ledger, low-stock logic
-- [ ] POS cart with scan flow and focus handling
-- [ ] Discounts (line, bill, product default), payment methods, split payments, cash and change
-- [ ] Staff accounts in Settings (create, reset password, deactivate), salesperson recorded on every sale
-- [ ] Transactional sale completion, bill numbering
-- [ ] Hold, resume and discard
-- [ ] Thermal receipt layout, sales history and reprint
-- [ ] `CashFlow` ledger service (`server/services/cashflow.ts`) with tests for every type
-- [ ] Returns and exchanges with refunds
-- [ ] Cash register open and close, cash out and expenses
-- [ ] Tests: sale completion, stock never going out of sync with movements, split payments, return restocking
+- [x] Inventory: stock levels, stock in, adjustments, movement ledger, low-stock logic, suppliers
+- [x] POS cart with scan flow and focus handling
+- [x] Discounts (line, bill, product default), payment methods, split payments, cash and change
+- [x] Staff accounts in Settings (create, reset password, deactivate), salesperson recorded on every sale
+- [x] Transactional sale completion, bill numbering
+- [x] Hold, resume and discard
+- [x] Thermal receipt layout, sales history and reprint
+- [x] `CashFlow` rows written by the sales, returns and cash register services (`server/services/sales.ts`, `returns.ts`, `cash.ts`), with tests for every type used so far
+- [x] Returns and exchanges with refunds (with or without the original bill)
+- [x] Cash register open and close, cash out and expenses
+- [x] Tests: sale completion, stock never going out of sync with movements, split payments, return restocking
+- [ ] Test with the real barcode scanner and receipt printer (when the hardware arrives)
 
 ### Phase 4: Customers, credit and reporting (days 12 to 15)
 

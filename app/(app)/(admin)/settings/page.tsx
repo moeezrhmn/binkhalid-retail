@@ -1,17 +1,9 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/coming-soon";
-import { PageHeader } from "@/components/page-header";
+import { ShopSettingsForm } from "@/components/settings/shop-settings-form";
+import { getSettings } from "@/lib/settings";
 
 export const metadata: Metadata = { title: "Settings" };
 
-export default function SettingsPage() {
-  return (
-    <>
-      <PageHeader title="Settings" description="Shop details, receipts, labels and staff." />
-      <ComingSoon
-        phase={3}
-        items={["Shop name and receipt text", "Label size", "Staff accounts"]}
-      />
-    </>
-  );
+export default async function SettingsPage() {
+  return <ShopSettingsForm initial={await getSettings()} />;
 }
