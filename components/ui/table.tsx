@@ -22,9 +22,17 @@ export function TR({ className, ...props }: HTMLAttributes<HTMLTableRowElement>)
 }
 
 export function TH({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
-  return <th className={cn("px-4 py-3 font-medium whitespace-nowrap", className)} {...props} />;
+  return (
+    <th
+      className={cn(
+        "px-3 py-2 text-xs font-medium tracking-wide whitespace-nowrap uppercase",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 export function TD({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("px-4 py-3 text-gray-800", className)} {...props} />;
+  return <td className={cn("px-3 py-1.5 text-gray-800", className)} {...props} />;
 }

@@ -145,13 +145,13 @@ export function QuickAddGrid({
     });
   };
 
-  const inputClass = "h-9";
+  const inputClass = "h-8";
 
   return (
     <div className="space-y-4">
-      <Card className="flex flex-wrap items-end gap-4 p-5">
-        <div className="w-64 space-y-1.5">
-          <label htmlFor="qa-category" className="block text-sm font-medium text-gray-700">
+      <Card className="flex flex-wrap items-end gap-3 p-4">
+        <div className="w-64 space-y-1">
+          <label htmlFor="qa-category" className="block text-xs font-medium text-gray-600">
             Category
           </label>
           <Select
@@ -309,7 +309,7 @@ export function QuickAddGrid({
       </div>
 
       {saved.length > 0 ? (
-        <Card className="p-5">
+        <Card className="p-4">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-900">
               Saved this session ({saved.length})

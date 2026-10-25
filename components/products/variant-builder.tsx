@@ -193,7 +193,7 @@ export function VariantBuilder({
                       value={row[field as keyof RowValues] as string}
                       disabled={!row.include}
                       onChange={(e) => setRow(row.key, { [field]: e.target.value })}
-                      className="h-9 w-24"
+                      className="h-8 w-24"
                     />
                   </TD>
                 ))}
@@ -296,7 +296,7 @@ function OptionPicker({
               aria-pressed={on}
               onClick={() => toggle(option)}
               className={cn(
-                "inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm transition-colors",
+                "inline-flex h-8 items-center gap-1.5 rounded-full border px-3.5 text-sm transition-colors",
                 on
                   ? "border-brand-700 bg-brand-700 text-white"
                   : "border-gray-300 bg-white text-gray-700 hover:border-brand-600",
@@ -327,7 +327,7 @@ function OptionPicker({
               ? `Type a ${attribute.name.toLowerCase()} and press Enter`
               : `New ${attribute.name.toLowerCase()}`
           }
-          className="h-9 min-w-40 flex-1"
+          className="h-8 min-w-40 flex-1"
         />
         {!isText ? (
           <Input
@@ -338,7 +338,7 @@ function OptionPicker({
               setAbbrevEdited(true);
             }}
             placeholder="Code"
-            className="h-9 w-24 font-mono text-xs"
+            className="h-8 w-24 font-mono text-xs"
           />
         ) : null}
         <Button variant="secondary" size="sm" onClick={add} disabled={pending || !value.trim()}>
@@ -392,11 +392,11 @@ function FillAll({
                   apply();
                 }
               }}
-              className="h-9 w-28"
+              className="h-8 w-28"
             />
           </label>
         ))}
-        <Button variant="secondary" size="sm" className="h-9" onClick={apply}>
+        <Button variant="secondary" size="sm" className="h-8" onClick={apply}>
           Apply to all
         </Button>
       </div>

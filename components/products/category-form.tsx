@@ -88,17 +88,17 @@ export function CategoryForm({
 
   return (
     <form
-      className="space-y-6"
+      className="space-y-4"
       onSubmit={(event) => {
         event.preventDefault();
         save();
       }}
     >
-      <Card className="space-y-4 p-5">
-        <h2 className="text-base font-semibold text-gray-900">
+      <Card className="space-y-4 p-4">
+        <h2 className="text-sm font-semibold text-gray-900">
           {initial.id ? "Edit category" : "New category"}
         </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-3">
           <Field
             label="Name"
             value={name}
@@ -116,8 +116,8 @@ export function CategoryForm({
             disabled={locked}
             required
           />
-          <div className="space-y-1.5">
-            <label htmlFor="unit" className="block text-sm font-medium text-gray-700">
+          <div className="space-y-1">
+            <label htmlFor="unit" className="block text-xs font-medium text-gray-600">
               Default unit
             </label>
             <Select
@@ -140,10 +140,10 @@ export function CategoryForm({
         />
       </Card>
 
-      <Card className="space-y-4 p-5">
+      <Card className="space-y-4 p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Attributes</h2>
+            <h2 className="text-sm font-semibold text-gray-900">Attributes</h2>
             <p className="text-sm text-gray-500">
               What varies inside this category, e.g. Color and Size. Attributes used in the code add
               their option code to every variant code, in this order.
@@ -272,9 +272,9 @@ function AttributeEditor({
             required
           />
         </div>
-        <div className="w-40 space-y-1.5">
+        <div className="w-40 space-y-1">
           <label
-            className="block text-sm font-medium text-gray-700"
+            className="block text-xs font-medium text-gray-600"
             htmlFor={`${attribute.key}-type`}
           >
             Values
@@ -290,7 +290,7 @@ function AttributeEditor({
           </Select>
         </div>
         <Checkbox
-          className="h-11"
+          className="h-9"
           label="Used in code"
           checked={attribute.usedInCode}
           disabled={structureLocked}

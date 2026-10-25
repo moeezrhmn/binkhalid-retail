@@ -174,7 +174,7 @@ export function ProductForm({
 
   return (
     <form
-      className="space-y-6"
+      className="space-y-4"
       onSubmit={(event) => {
         event.preventDefault();
         save(false);
@@ -196,10 +196,10 @@ export function ProductForm({
         </Alert>
       ) : null}
 
-      <Card className="space-y-4 p-5">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="space-y-1.5">
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+      <Card className="space-y-4 p-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-1">
+            <label htmlFor="category" className="block text-xs font-medium text-gray-600">
               Category
             </label>
             <Select
@@ -222,8 +222,8 @@ export function ProductForm({
             placeholder="e.g. Velvet Prayer Cap"
             required
           />
-          <div className="space-y-1.5">
-            <label htmlFor="unit" className="block text-sm font-medium text-gray-700">
+          <div className="space-y-1">
+            <label htmlFor="unit" className="block text-xs font-medium text-gray-600">
               Sold by
             </label>
             <Select id="unit" value={unit} onChange={(e) => setUnit(e.target.value as UnitCode)}>
@@ -235,8 +235,8 @@ export function ProductForm({
             </Select>
           </div>
         </div>
-        <div className="space-y-1.5">
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+        <div className="space-y-1">
+          <label htmlFor="description" className="block text-xs font-medium text-gray-600">
             Description <span className="font-normal text-gray-400">(optional)</span>
           </label>
           <Textarea
@@ -246,16 +246,16 @@ export function ProductForm({
             onChange={(e) => setDescription(e.target.value)}
           />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <DiscountFields value={discount} onChange={setDiscount} />
           <ImageField key={imageKey} onChange={setImage} />
         </div>
       </Card>
 
       {category ? (
-        <Card className="space-y-4 p-5">
+        <Card className="space-y-4 p-4">
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Variants</h2>
+            <h2 className="text-sm font-semibold text-gray-900">Variants</h2>
             <p className="text-sm text-gray-500">
               {category.attributes.length
                 ? "Pick the options this product comes in. Every combination becomes a variant with its own code, price and stock. Leave everything unpicked for a single variant."

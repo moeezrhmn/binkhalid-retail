@@ -364,6 +364,16 @@ After launch: 15 days of free bug fixes. New features or changes after that are 
 - Soft-delete only (`isActive`). Do not hard-delete products, variants or customers that have history.
 - Pagination on every list that can grow (sales, movements, customers).
 - Keep the UI fast at the counter: no full-page reloads while billing, keyboard-friendly, large touch targets. Test every screen at tablet width, and the lookup screens at phone width (375px): cards stack, tables scroll sideways inside their card, and the page itself never scrolls sideways. On phones the sidebar becomes a drawer opened from the top bar.
+- **Compact, dense UI.** The system has many features, but every screen stays tight and efficient: as much useful information on screen as possible without scrolling, while staying easy to read and click.
+  - Use the shared components and their sizes (`components/ui`): 36px inputs and buttons, 34px table rows, small uppercase table headers, 12px form labels, tight card padding and section gaps.
+  - Hide what isn't always needed (extra discounts, notes, rare actions) behind a small link or a "More" menu.
+  - The POS fits one screen at 1366 × 768 with no page scrolling; only the cart list scrolls. Its key actions (Complete sale, payment buttons, total) stay large.
+- **Premium raised buttons.** Every button uses the shared `Button` / `buttonClasses` component, never one-off button styles.
+  - Primary: brand green with a soft sheen, a light top edge and a darker bottom edge, so it looks raised.
+  - Secondary: white with a soft shadow outline.
+  - Every button visibly presses in when clicked.
+  - Semibold labels and 8px corners.
+  - The shadows are the `--shadow-btn*` tokens in `app/globals.css`.
 - Accessible markup: real `<button>`, `<label>`, visible focus styles.
 - No secrets in the repo. Use `.env` with a committed `.env.example`.
 - Small commits, made directly on `main` for now. Tag the end of each phase (`phase-1`, `phase-2`, …). Update the checklist in this file as items are done.

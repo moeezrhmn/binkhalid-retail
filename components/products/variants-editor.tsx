@@ -78,7 +78,7 @@ export function VariantsEditor({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-gray-900">Variants ({variants.length})</h2>
+        <h2 className="text-sm font-semibold text-gray-900">Variants ({variants.length})</h2>
         {editing ? (
           <div className="flex gap-2">
             <Button
@@ -202,7 +202,7 @@ function PriceInput({
       inputMode="decimal"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="ml-auto h-9 w-24 text-right"
+      className="ml-auto h-8 w-24 text-right"
     />
   );
 }

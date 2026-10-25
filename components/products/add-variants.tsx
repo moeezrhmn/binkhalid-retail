@@ -59,9 +59,9 @@ export function AddVariants({
   };
 
   return (
-    <Card className="space-y-4 p-5">
+    <Card className="space-y-4 p-4">
       <div>
-        <h2 className="text-base font-semibold text-gray-900">Add variants</h2>
+        <h2 className="text-sm font-semibold text-gray-900">Add variants</h2>
         <p className="text-sm text-gray-500">
           Pick options to add. Combinations this product already has are left out.
         </p>

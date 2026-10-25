@@ -7,7 +7,7 @@ import {
   searchLabelVariantsAction,
 } from "@/app/(app)/(admin)/barcodes/actions";
 import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
@@ -99,7 +99,7 @@ export function LabelBuilder({
 
   return (
     <div className="space-y-4">
-      <Card className="space-y-3 p-5">
+      <Card className="space-y-3 p-4">
         <div className="flex flex-wrap gap-2">
           <div className="relative min-w-0 flex-1 basis-72">
             <ScanLine
@@ -193,7 +193,7 @@ export function LabelBuilder({
                         ),
                       )
                     }
-                    className="h-9 w-20"
+                    className="h-8 w-20"
                   />
                 </TD>
                 <TD>
@@ -233,11 +233,7 @@ export function LabelBuilder({
           target="_blank"
           rel="noreferrer"
           aria-disabled={totalLabels === 0}
-          className={
-            totalLabels > 0
-              ? "inline-flex h-11 items-center gap-2 rounded-lg bg-brand-700 px-4 text-sm font-medium text-white hover:bg-brand-800"
-              : "inline-flex h-11 cursor-not-allowed items-center gap-2 rounded-lg bg-brand-700/50 px-4 text-sm font-medium text-white"
-          }
+          className={buttonClasses()}
         >
           <Printer className="size-4" aria-hidden /> Preview and print {totalLabels} label
           {totalLabels === 1 ? "" : "s"}

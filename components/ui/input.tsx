@@ -7,7 +7,7 @@ export function Input({ className, ...props }: ComponentProps<"input">) {
   return (
     <input
       className={cn(
-        "h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400",
+        "h-9 w-full rounded-md border border-gray-300 bg-white px-2.5 text-sm text-gray-900 placeholder:text-gray-400",
         "focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20 focus:outline-none",
         "disabled:bg-gray-100 disabled:text-gray-500 aria-invalid:border-red-500",
         className,
@@ -29,8 +29,8 @@ export function Field({ label, hint, error, id, className, ...props }: FieldProp
   const inputId = id ?? generatedId;
   const messageId = `${inputId}-message`;
   return (
-    <div className={cn("space-y-1.5", className)}>
-      <label htmlFor={inputId} className="block text-sm font-medium text-gray-700">
+    <div className={cn("space-y-1", className)}>
+      <label htmlFor={inputId} className="block text-xs font-medium text-gray-600">
         {label}
       </label>
       <Input
@@ -40,11 +40,11 @@ export function Field({ label, hint, error, id, className, ...props }: FieldProp
         {...props}
       />
       {error ? (
-        <p id={messageId} className="text-sm text-red-600">
+        <p id={messageId} className="text-xs text-red-600">
           {error}
         </p>
       ) : hint ? (
-        <p id={messageId} className="text-sm text-gray-500">
+        <p id={messageId} className="text-xs text-gray-500">
           {hint}
         </p>
       ) : null}

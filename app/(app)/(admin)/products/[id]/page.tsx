@@ -25,8 +25,8 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
   const labelIds = product.variants.filter((v) => v.isActive).map((v) => v.id);
 
   return (
-    <div className="space-y-6">
-      <Card className="p-5">
+    <div className="space-y-4">
+      <Card className="p-4">
         <div className="flex flex-wrap items-start gap-5">
           {product.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- uploads are served behind login, not via the image optimizer
@@ -87,7 +87,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
         </div>
       </Card>
 
-      <Card className="p-5">
+      <Card className="p-4">
         <VariantsEditor
           productId={product.id}
           variants={product.variants}

@@ -69,20 +69,20 @@ export function ProductDetailsForm({
 
   return (
     <form
-      className="space-y-6"
+      className="space-y-4"
       onSubmit={(event) => {
         event.preventDefault();
         save();
       }}
     >
-      <Card className="space-y-4 p-5">
+      <Card className="space-y-4 p-4">
         <div>
-          <h2 className="text-base font-semibold text-gray-900">Edit product</h2>
+          <h2 className="text-sm font-semibold text-gray-900">Edit product</h2>
           <p className="text-sm text-gray-500">
             Category: {product.categoryName}. Codes never change when you edit a product.
           </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Field
             label="Product name"
             value={name}
@@ -90,8 +90,8 @@ export function ProductDetailsForm({
             required
             autoFocus
           />
-          <div className="space-y-1.5">
-            <label htmlFor="unit" className="block text-sm font-medium text-gray-700">
+          <div className="space-y-1">
+            <label htmlFor="unit" className="block text-xs font-medium text-gray-600">
               Sold by
             </label>
             <Select id="unit" value={unit} onChange={(e) => setUnit(e.target.value as UnitCode)}>
@@ -103,8 +103,8 @@ export function ProductDetailsForm({
             </Select>
           </div>
         </div>
-        <div className="space-y-1.5">
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+        <div className="space-y-1">
+          <label htmlFor="description" className="block text-xs font-medium text-gray-600">
             Description <span className="font-normal text-gray-400">(optional)</span>
           </label>
           <Textarea
@@ -114,7 +114,7 @@ export function ProductDetailsForm({
             onChange={(e) => setDescription(e.target.value)}
           />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <DiscountFields value={discount} onChange={setDiscount} />
           <ImageField
             currentUrl={product.imageUrl}

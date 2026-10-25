@@ -57,7 +57,7 @@ export function Sidebar({ user }: { user: CurrentUser }) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 bg-brand-900 px-4 text-white md:hidden print:hidden">
+      <header className="sticky top-0 z-30 flex h-12 items-center gap-3 bg-brand-900 px-3 text-white md:hidden print:hidden">
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -82,13 +82,13 @@ export function Sidebar({ user }: { user: CurrentUser }) {
       <aside
         id="main-sidebar"
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-brand-900 text-brand-100 transition-transform md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:translate-x-0 print:hidden",
+          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-brand-900 text-brand-100 transition-transform md:sticky md:top-0 md:h-screen md:w-52 md:shrink-0 md:translate-x-0 print:hidden",
           open ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        <div className="flex items-start justify-between px-5 py-6">
+        <div className="flex items-start justify-between px-4 py-4">
           <div>
-            <p className="text-xl font-semibold text-white">Bin Khalid</p>
+            <p className="text-lg font-semibold text-white">Bin Khalid</p>
             <p className="text-xs text-gold-300">Retail Management</p>
           </div>
           <button
@@ -111,13 +111,13 @@ export function Sidebar({ user }: { user: CurrentUser }) {
                 onClick={() => setOpen(false)}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
                   active
                     ? "bg-gold-500 text-brand-950"
                     : "text-brand-100 hover:bg-brand-800 hover:text-white",
                 )}
               >
-                <Icon className="size-5 shrink-0" aria-hidden />
+                <Icon className="size-[18px] shrink-0" aria-hidden />
                 {label}
               </Link>
             );
@@ -132,9 +132,9 @@ export function Sidebar({ user }: { user: CurrentUser }) {
           <form action={logout}>
             <button
               type="submit"
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-brand-100 hover:bg-brand-800 hover:text-white"
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-brand-100 hover:bg-brand-800 hover:text-white"
             >
-              <LogOut className="size-5" aria-hidden />
+              <LogOut className="size-[18px]" aria-hidden />
               Log out
             </button>
           </form>

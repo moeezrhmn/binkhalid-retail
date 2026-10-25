@@ -17,6 +17,22 @@
   --color-gold-400: #e2c060;
   --color-gold-500: #c9a227;
   --color-gold-600: #a6841c;
+
+  /*
+   * Raised buttons: a light top edge and a darker bottom edge drawn with inset
+   * shadows make them look pressable; the pressed state flips to a top shadow.
+   */
+  --shadow-btn:
+    inset 0 -1px 0 0 #b5b5b5, inset 0 0 0 1px rgb(0 0 0 / 0.1), inset 0 0.5px 0 1.5px #fff;
+  --shadow-btn-pressed: inset 0 2px 1px 0 rgb(26 26 26 / 0.2), inset 0 0 0 1px rgb(0 0 0 / 0.12);
+  --shadow-btn-primary:
+    inset 0 -1px 0 1px rgb(0 0 0 / 0.35), inset 0 0 0 1px #114331,
+    inset 0 0.5px 0 1.5px rgb(255 255 255 / 0.22);
+  --shadow-btn-primary-pressed: inset 0 3px 0 0 rgb(0 0 0 / 0.35), inset 0 0 0 1px #114331;
+  --shadow-btn-danger:
+    inset 0 -1px 0 1px rgb(0 0 0 / 0.3), inset 0 0 0 1px #9f1d1d,
+    inset 0 0.5px 0 1.5px rgb(255 255 255 / 0.22);
+  --shadow-btn-danger-pressed: inset 0 3px 0 0 rgb(0 0 0 / 0.3), inset 0 0 0 1px #9f1d1d;
 }
 
 :root {
