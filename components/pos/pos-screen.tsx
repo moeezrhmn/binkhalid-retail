@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Clock, History, Minus, Plus, ScanLine, Trash2, X } from "lucide-react";
 import {
@@ -11,8 +10,10 @@ import {
   listHeldAction,
   lookupAction,
 } from "@/app/(app)/pos/actions";
+import type { DayStatus } from "@/server/services/cash";
+import { DayClosedNotice } from "@/components/cash/day-closed-notice";
 import { Alert } from "@/components/ui/alert";
-import { Button, buttonClasses } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import {
@@ -81,7 +82,7 @@ export function PosScreen({
   userRole,
   exchange,
   saved,
-  dayOpen,
+  day,
   isAdmin,
 }: {
   userName: string;
@@ -90,9 +91,10 @@ export function PosScreen({
   /** Shown after an exchange, which reloads the POS to leave exchange mode. */
   saved?: { billNo: number; giveBack: number } | null;
   /** Billing needs an open register day. */
-  dayOpen: boolean;
+  day: DayStatus;
   isAdmin: boolean;
 }) {
+  const dayOpen = day.open;
   const router = useRouter();
   const scanRef = useRef<HTMLInputElement>(null);
   const customerRef = useRef<HTMLInputElement>(null);
@@ -514,19 +516,12 @@ export function PosScreen({
           </Alert>
         ) : null}
 
-        {!dayOpen ? (
-          <Alert tone="error" className="flex flex-wrap items-center justify-between gap-2">
-            <span>
-              <strong>The day is closed.</strong> Sales can be held, but not completed, until{" "}
-              {isAdmin ? "you open the day" : "an admin opens the day"} in Cash Register.
-            </span>
-            {isAdmin ? (
-              <Link href="/cash" className={buttonClasses({ size: "sm" })}>
-                Open Cash Register
-              </Link>
-            ) : null}
-          </Alert>
-        ) : null}
+        <DayClosedNotice
+          day={day}
+          action="complete sales"
+          isAdmin={isAdmin}
+          extra="Sales can still be held meanwhile."
+        />
 
         {lastSale ? (
           <div

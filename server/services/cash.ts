@@ -1,6 +1,7 @@
 import "server-only";
 import { Prisma, type CashSession, type PaymentMethod } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { formatDateTime } from "@/lib/format";
 import { UserError } from "./errors";
 
 type Tx = Prisma.TransactionClient;
@@ -32,6 +33,15 @@ export async function requireOpenDay(tx: Tx) {
 
 export async function currentSession() {
   return db.cashSession.findFirst({ where: { closedAt: null }, orderBy: { openedAt: "desc" } });
+}
+
+export type DayStatus = { open: boolean; lastClosedAt: string | null };
+
+/** Whether money can move now, and when the last day was closed (so it can be reopened). */
+export async function dayStatus(): Promise<DayStatus> {
+  const last = await db.cashSession.findFirst({ orderBy: { openedAt: "desc" } });
+  if (last && !last.closedAt) return { open: true, lastClosedAt: null };
+  return { open: false, lastClosedAt: last?.closedAt ? formatDateTime(last.closedAt) : null };
 }
 
 export async function openSession(openingCash: number, note?: string | null) {

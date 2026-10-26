@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { Plus, ScanLine, Trash2 } from "lucide-react";
 import { searchLabelVariantsAction } from "@/app/(app)/(admin)/barcodes/actions";
 import { createReturnAction } from "@/app/(app)/(admin)/sales/actions";
+import { DayClosedNotice } from "@/components/cash/day-closed-notice";
+import type { DayStatus } from "@/server/services/cash";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,7 +28,7 @@ type Row = {
 
 const METHODS = PAYMENT_METHODS.filter((m) => m !== "CREDIT");
 
-export function NoBillReturn({ dayOpen }: { dayOpen: boolean }) {
+export function NoBillReturn({ day }: { day: DayStatus }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [q, setQ] = useState("");
   const [results, setResults] = useState<LabelVariant[]>([]);
@@ -104,11 +106,7 @@ export function NoBillReturn({ dayOpen }: { dayOpen: boolean }) {
 
   return (
     <div className="space-y-3">
-      {!dayOpen ? (
-        <Alert tone="error">
-          The day is closed. Open it in Cash Register before taking a return or giving a refund.
-        </Alert>
-      ) : null}
+      <DayClosedNotice day={day} action="take a return or give a refund" />
       <Alert>
         Use this only when the customer has no bill. With a bill, open it from{" "}
         <strong>Bills</strong> so the refund matches what was paid.
@@ -246,7 +244,7 @@ export function NoBillReturn({ dayOpen }: { dayOpen: boolean }) {
             ))}
           </Select>
         </div>
-        <Button onClick={save} disabled={pending || rows.length === 0 || !dayOpen}>
+        <Button onClick={save} disabled={pending || rows.length === 0 || !day.open}>
           {pending ? "Saving…" : `Save return and refund ${formatRs(total)}`}
         </Button>
       </div>

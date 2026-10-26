@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import {
   closeSession,
   currentSession,
+  dayStatus,
   openSession,
   recordDrawerOut,
   reopenLastSession,
@@ -437,6 +438,8 @@ describe("a closed day", () => {
 
   it("refuses sales, udhaar payments, refunds and cash out until a day is open", async () => {
     const fx = await shopFixture({ openDay: false });
+    // Never opened: nothing to reopen.
+    expect(await dayStatus()).toEqual({ open: false, lastClosedAt: null });
     const owes = await createCustomer(
       { name: "Owes", phone: null, openingBalance: 1000 },
       fx.user.id,
@@ -493,6 +496,7 @@ describe("a closed day", () => {
     await closeSession(5650, "closed early");
     await expect(sell(fx)).rejects.toThrow(/The day is closed/);
 
+    expect(await dayStatus()).toMatchObject({ open: false, lastClosedAt: expect.any(String) });
     const reopened = await reopenLastSession("Owner");
     expect(reopened).toMatchObject({
       id: opened.id,
@@ -503,6 +507,7 @@ describe("a closed day", () => {
     expect(reopened.note).toMatch(/closed early \| Reopened by Owner at /);
     await expect(reopenLastSession("Owner")).rejects.toThrow(/already open/);
 
+    expect(await dayStatus()).toEqual({ open: true, lastClosedAt: null });
     await sell(fx);
     const final = await closeSession(6300);
     expect(final.expectedCash).toBe(6300);

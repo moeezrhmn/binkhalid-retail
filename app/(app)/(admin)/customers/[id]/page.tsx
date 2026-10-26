@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Printer } from "lucide-react";
+import { DayClosedNotice } from "@/components/cash/day-closed-notice";
 import { CustomerFormButton, ReceivePaymentButton } from "@/components/customers/customer-dialogs";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatRs } from "@/lib/format";
-import { currentSession } from "@/server/services/cash";
+import { dayStatus } from "@/server/services/cash";
 import { customerPurchases, customerStatement, getCustomer } from "@/server/services/customers";
 import { requireAdmin } from "@/lib/auth";
 
@@ -21,7 +22,11 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
   const { id } = await params;
   const customer = /^[0-9a-f-]{36}$/.test(id) ? await getCustomer(id) : null;
   if (!customer) notFound();
-  const [statement, purchases] = await Promise.all([customerStatement(id), customerPurchases(id)]);
+  const [statement, purchases, day] = await Promise.all([
+    customerStatement(id),
+    customerPurchases(id),
+    dayStatus(),
+  ]);
   const balance = statement.at(-1)?.balance ?? 0;
 
   return (
@@ -50,12 +55,13 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
             <ReceivePaymentButton
               customer={{ id: customer.id, name: customer.name }}
               balance={balance}
-              dayOpen={Boolean(await currentSession())}
+              dayOpen={day.open}
             />
           </>
         }
       />
       <div className="space-y-3">
+        {balance > 0 ? <DayClosedNotice day={day} action="receive a payment" /> : null}
         <Card className="flex flex-wrap items-center gap-6 p-4">
           <div>
             <p className="text-xs text-gray-500">Udhaar balance</p>

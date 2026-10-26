@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRightLeft, Undo2 } from "lucide-react";
 import { createReturnAction } from "@/app/(app)/(admin)/sales/actions";
+import { DayClosedNotice } from "@/components/cash/day-closed-notice";
+import type { DayStatus } from "@/server/services/cash";
 import { Alert } from "@/components/ui/alert";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,10 +30,10 @@ type Item = {
 
 export function ReturnForm({
   sale,
-  dayOpen,
+  day,
 }: {
   /** Refunds need an open register day. */
-  dayOpen: boolean;
+  day: DayStatus;
   sale: {
     id: string;
     billNo: number;
@@ -180,15 +182,11 @@ export function ReturnForm({
         </div>
       </Card>
 
-      {!dayOpen ? (
-        <Alert tone="error">
-          The day is closed. Open it in Cash Register before taking a return or giving a refund.
-        </Alert>
-      ) : null}
+      <DayClosedNotice day={day} action="take a return or give a refund" />
       {error ? <Alert tone="error">{error}</Alert> : null}
 
       <div className="flex flex-wrap gap-2">
-        <Button onClick={refundNow} disabled={pending || picked.length === 0 || !dayOpen}>
+        <Button onClick={refundNow} disabled={pending || picked.length === 0 || !day.open}>
           <Undo2 className="size-4" aria-hidden />{" "}
           {pending ? "Saving…" : `Return and refund ${formatRs(refund)}`}
         </Button>

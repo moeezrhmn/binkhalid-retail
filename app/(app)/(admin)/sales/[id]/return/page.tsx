@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ReturnForm } from "@/components/sales/return-form";
 import type { SalePaymentMethod } from "@/lib/cart";
-import { currentSession } from "@/server/services/cash";
+import { dayStatus } from "@/server/services/cash";
 import { getSaleDetail } from "@/server/services/sales-history";
 import { requireAdmin } from "@/lib/auth";
 
@@ -22,7 +22,7 @@ export default async function ReturnPage({ params }: PageProps<"/sales/[id]/retu
 
   return (
     <ReturnForm
-      dayOpen={Boolean(await currentSession())}
+      day={await dayStatus()}
       sale={{
         id: sale.id,
         billNo: sale.billNo,

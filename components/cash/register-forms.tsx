@@ -178,7 +178,13 @@ export function CloseDayForm({ expectedCash }: { expectedCash: number }) {
 }
 
 /** Reopens the last day when it was closed by mistake. */
-export function ReopenDayButton({ closedAt }: { closedAt: string }) {
+export function ReopenDayButton({
+  closedAt,
+  size = "md",
+}: {
+  closedAt: string;
+  size?: "sm" | "md";
+}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -186,6 +192,7 @@ export function ReopenDayButton({ closedAt }: { closedAt: string }) {
     <div className="space-y-2">
       <Button
         variant="secondary"
+        size={size}
         disabled={pending}
         onClick={() => {
           if (

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PosScreen } from "@/components/pos/pos-screen";
 import { requireUser } from "@/lib/auth";
-import { currentSession } from "@/server/services/cash";
+import { dayStatus } from "@/server/services/cash";
 import { previewExchange } from "@/server/services/returns";
 
 export const metadata: Metadata = { title: "POS / Billing" };
@@ -41,7 +41,7 @@ export default async function PosPage({ searchParams }: PageProps<"/pos">) {
       }
       userName={user.name}
       userRole={user.type}
-      dayOpen={Boolean(await currentSession())}
+      day={await dayStatus()}
       isAdmin={user.type === "ADMIN"}
       exchange={exchangeDraft}
       saved={exchangeDraft ? null : savedBill}
