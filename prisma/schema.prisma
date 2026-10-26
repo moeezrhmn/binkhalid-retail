@@ -290,16 +290,23 @@ model CashSession {
 }
 
 model User {
-  id           String     @id @default(uuid(7)) @db.Uuid
-  name         String
-  type         UserType
-  username     String     @unique
-  passwordHash String
-  isActive     Boolean    @default(true)
-  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
-  sales        Sale[]
-  cashFlows    CashFlow[]
+  id             String     @id @default(uuid(7)) @db.Uuid
+  name           String
+  type           UserType
+  username       String     @unique
+  passwordHash   String
+  isActive       Boolean    @default(true)
+  /// Bumped to log the user out everywhere (deactivation, password reset, role change).
+  sessionVersion Int        @default(0)
+  createdById    String?    @db.Uuid
+  createdBy      User?      @relation("CreatedUsers", fields: [createdById], references: [id], onDelete: Restrict)
+  createdUsers   User[]     @relation("CreatedUsers")
+  createdAt      DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime   @updatedAt @db.Timestamptz(3)
+  sales          Sale[]
+  cashFlows      CashFlow[]
+
+  @@index([createdById])
 }
 
 model Counter {

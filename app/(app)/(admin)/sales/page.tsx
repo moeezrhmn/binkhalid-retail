@@ -11,6 +11,7 @@ import { METHOD_LABELS } from "@/lib/cart";
 import { rangeFromParams } from "@/lib/date-filter";
 import { formatDateTime, formatRs } from "@/lib/format";
 import { listSales } from "@/server/services/sales-history";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Sales" };
 
@@ -18,6 +19,7 @@ const one = (value: string | string[] | undefined) =>
   typeof value === "string" ? value : undefined;
 
 export default async function SalesPage({ searchParams }: PageProps<"/sales">) {
+  await requireAdmin();
   const params = await searchParams;
   const q = one(params.q)?.trim() ?? "";
   const { period, range, from, to } = rangeFromParams({

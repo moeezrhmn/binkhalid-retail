@@ -9,10 +9,12 @@ import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { METHOD_LABELS } from "@/lib/cart";
 import { formatDateTime, formatQty, formatRs } from "@/lib/format";
 import { getSaleDetail } from "@/server/services/sales-history";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Bill" };
 
 export default async function BillPage({ params }: PageProps<"/sales/[id]">) {
+  await requireAdmin();
   const { id } = await params;
   const sale = /^[0-9a-f-]{36}$/.test(id) ? await getSaleDetail(id) : null;
   if (!sale) notFound();

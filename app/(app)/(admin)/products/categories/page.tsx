@@ -7,10 +7,12 @@ import { Card } from "@/components/ui/card";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { UNIT_LABELS } from "@/lib/units";
 import { listCategories } from "@/server/services/categories";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Categories" };
 
 export default async function CategoriesPage() {
+  await requireAdmin();
   const categories = await listCategories();
 
   return (

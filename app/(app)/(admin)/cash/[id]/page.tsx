@@ -9,10 +9,12 @@ import { Card } from "@/components/ui/card";
 import { db } from "@/lib/db";
 import { formatDateTime, formatRs } from "@/lib/format";
 import { listDrawerOuts, summarize } from "@/server/services/cash";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Cash day" };
 
 export default async function CashDayPage({ params }: PageProps<"/cash/[id]">) {
+  await requireAdmin();
   const { id } = await params;
   const session = /^[0-9a-f-]{36}$/.test(id)
     ? await db.cashSession.findUnique({ where: { id } })

@@ -10,6 +10,7 @@ import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { rangeFromParams } from "@/lib/date-filter";
 import { formatRs } from "@/lib/format";
 import { buildReport, salesByDay, salesTotals } from "@/server/services/reports";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -40,6 +41,7 @@ function StatTile({ label, value, hint }: { label: string; value: string; hint?:
 }
 
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
+  await requireAdmin();
   const params = await searchParams;
   const { period, range, from, to } = rangeFromParams({
     period: one(params.period),

@@ -5,7 +5,11 @@ import { jwtVerify, SignJWT } from "jose";
 export const SESSION_COOKIE = "bk_session";
 const SESSION_DAYS = 7;
 
-export type SessionPayload = { uid: string; type: "ADMIN" | "STAFF" };
+/**
+ * What the login cookie carries. The role is not stored here (it is read from the
+ * database on every request); `ver` must match the user's current sessionVersion.
+ */
+export type SessionPayload = { uid: string; ver: number };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -42,11 +46,12 @@ export async function readSession(): Promise<SessionPayload | null> {
     if (
       typeof payload.uid !== "string" ||
       !UUID.test(payload.uid) ||
-      (payload.type !== "ADMIN" && payload.type !== "STAFF")
+      typeof payload.ver !== "number" ||
+      !Number.isInteger(payload.ver)
     ) {
       return null;
     }
-    return { uid: payload.uid, type: payload.type };
+    return { uid: payload.uid, ver: payload.ver };
   } catch {
     return null;
   }

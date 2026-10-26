@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductDetailsForm } from "@/components/products/product-details-form";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Edit product" };
 
 export default async function EditProductPage({ params }: PageProps<"/products/[id]/edit">) {
+  await requireAdmin();
   const { id } = await params;
   const product = /^[0-9a-f-]{36}$/.test(id)
     ? await db.product.findUnique({

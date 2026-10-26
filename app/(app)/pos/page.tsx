@@ -39,6 +39,7 @@ export default async function PosPage({ searchParams }: PageProps<"/pos">) {
           : `sale-${savedBill?.billNo ?? ""}`
       }
       userName={user.name}
+      userRole={user.type}
       exchange={exchangeDraft}
       saved={exchangeDraft ? null : savedBill}
     />

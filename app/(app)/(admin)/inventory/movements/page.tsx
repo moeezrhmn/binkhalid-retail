@@ -14,6 +14,7 @@ import { db } from "@/lib/db";
 import { formatDateTime, formatQty, formatRs } from "@/lib/format";
 import { UNIT_LABELS } from "@/lib/units";
 import { listMovements } from "@/server/services/stock";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Stock movements" };
 
@@ -42,6 +43,7 @@ function validDate(value: string | undefined) {
 }
 
 export default async function MovementsPage({ searchParams }: PageProps<"/inventory/movements">) {
+  await requireAdmin();
   const params = await searchParams;
   const type = TYPES.find((t) => t.value === one(params.type))?.value;
   const from = validDate(one(params.from));

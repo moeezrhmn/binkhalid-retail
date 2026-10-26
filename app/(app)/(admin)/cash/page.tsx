@@ -8,10 +8,12 @@ import { Card } from "@/components/ui/card";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatDateTime, formatRs } from "@/lib/format";
 import { currentSession, listDrawerOuts, listSessions, summarize } from "@/server/services/cash";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Cash Register" };
 
 export default async function CashPage() {
+  await requireAdmin();
   const [session, sessions] = await Promise.all([currentSession(), listSessions()]);
   const [summary, outs] = session
     ? await Promise.all([summarize(session), listDrawerOuts(session)])

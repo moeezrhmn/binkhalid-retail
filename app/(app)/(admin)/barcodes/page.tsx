@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { MAX_LABEL_COPIES, MAX_LABEL_ITEMS } from "@/lib/labels";
 import { getSettings } from "@/lib/settings";
 import { labelVariantsAddedToday, labelVariantsByIds } from "@/server/services/labels";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Barcode Labels" };
 
@@ -26,6 +27,7 @@ function parseRequested(variants: unknown, items: unknown) {
 }
 
 export default async function BarcodesPage({ searchParams }: PageProps<"/barcodes">) {
+  await requireAdmin();
   const { variants, items, today } = await searchParams;
   const requested = parseRequested(variants, items);
   const ids = requested.map(([id]) => id);

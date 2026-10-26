@@ -12,10 +12,12 @@ import { UNIT_LABELS } from "@/lib/units";
 import { variantKey } from "@/lib/variants";
 import { toAttributeForm } from "@/server/services/categories";
 import { getProduct } from "@/server/services/products";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Product" };
 
 export default async function ProductPage({ params, searchParams }: PageProps<"/products/[id]">) {
+  await requireAdmin();
   const { id } = await params;
   const { variant } = await searchParams;
   const product = /^[0-9a-f-]{36}$/.test(id) ? await getProduct(id) : null;

@@ -25,6 +25,7 @@ import {
 import { cn } from "@/lib/cn";
 import { formatQty, formatRs } from "@/lib/format";
 import { qtyToMilli } from "@/lib/money";
+import { ROLE_LABELS } from "@/lib/roles";
 import { beepError, beepOk } from "@/lib/sound";
 import { allowsFraction, UNIT_LABELS, validateQty } from "@/lib/units";
 import type { CustomerOption } from "@/server/services/customers";
@@ -76,10 +77,12 @@ function printReceipt(saleId: string) {
 
 export function PosScreen({
   userName,
+  userRole,
   exchange,
   saved,
 }: {
   userName: string;
+  userRole: "ADMIN" | "STAFF";
   exchange: PosExchange | null;
   /** Shown after an exchange, which reloads the POS to leave exchange mode. */
   saved?: { billNo: number; giveBack: number } | null;
@@ -420,7 +423,10 @@ export function PosScreen({
       <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
         <div className="flex items-center gap-2">
           <h1 className="text-lg font-semibold text-gray-900">POS / Billing</h1>
-          <span className="text-xs text-gray-500">Salesperson: {userName}</span>
+          <span className="text-xs text-gray-500">
+            Served by: <span className="font-medium text-gray-700">{userName}</span> (
+            {ROLE_LABELS[userRole]})
+          </span>
           <div className="ml-auto flex gap-2">
             <Button variant="secondary" size="sm" onClick={() => setHeldOpen(true)}>
               <Clock className="size-4" aria-hidden /> Held ({heldCount})

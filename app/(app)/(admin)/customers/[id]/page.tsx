@@ -11,10 +11,12 @@ import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatRs } from "@/lib/format";
 import { customerPurchases, customerStatement, getCustomer } from "@/server/services/customers";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Customer" };
 
 export default async function CustomerPage({ params }: PageProps<"/customers/[id]">) {
+  await requireAdmin();
   const { id } = await params;
   const customer = /^[0-9a-f-]{36}$/.test(id) ? await getCustomer(id) : null;
   if (!customer) notFound();

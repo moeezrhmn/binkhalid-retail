@@ -10,6 +10,7 @@ import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { cn } from "@/lib/cn";
 import { formatDate, formatRs } from "@/lib/format";
 import { listCustomers, totalOutstanding } from "@/server/services/customers";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Customers" };
 
@@ -17,6 +18,7 @@ const one = (value: string | string[] | undefined) =>
   typeof value === "string" ? value : undefined;
 
 export default async function CustomersPage({ searchParams }: PageProps<"/customers">) {
+  await requireAdmin();
   const params = await searchParams;
   const q = one(params.q)?.trim() ?? "";
   const owing = one(params.owing) === "1";

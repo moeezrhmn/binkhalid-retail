@@ -22,6 +22,7 @@ import {
 import { logout } from "@/app/actions/auth";
 import type { CurrentUser } from "@/lib/auth";
 import { cn } from "@/lib/cn";
+import { ROLE_LABELS } from "@/lib/roles";
 
 type NavItem = { href: string; label: string; icon: LucideIcon; adminOnly: boolean };
 
@@ -129,7 +130,7 @@ export function Sidebar({ user }: { user: CurrentUser }) {
         <div className="border-t border-brand-800 p-3">
           <div className="px-3 pb-3">
             <p className="truncate text-sm font-medium text-white">{user.name}</p>
-            <p className="text-xs text-brand-100/70">{user.type === "ADMIN" ? "Admin" : "Staff"}</p>
+            <p className="text-xs text-brand-100/70">{ROLE_LABELS[user.type]}</p>
           </div>
           <form action={logout}>
             <button

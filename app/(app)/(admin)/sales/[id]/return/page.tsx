@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { ReturnForm } from "@/components/sales/return-form";
 import type { SalePaymentMethod } from "@/lib/cart";
 import { getSaleDetail } from "@/server/services/sales-history";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Return" };
 
 export default async function ReturnPage({ params }: PageProps<"/sales/[id]/return">) {
+  await requireAdmin();
   const { id } = await params;
   const sale = /^[0-9a-f-]{36}$/.test(id) ? await getSaleDetail(id) : null;
   if (!sale) notFound();

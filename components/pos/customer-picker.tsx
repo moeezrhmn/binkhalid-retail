@@ -31,6 +31,9 @@ export function CustomerPicker({
   const [similar, setSimilar] = useState<CustomerOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  // Separate from `pending`: the similar-name check runs when the name field loses
+  // focus, which is also what clicking Save does, so it must never disable Save.
+  const [, startSimilarCheck] = useTransition();
   const latest = useRef("");
 
   const search = (text: string) => {
@@ -106,7 +109,7 @@ export function CustomerPicker({
           onChange={(e) => setAdding({ ...adding, name: e.target.value })}
           onBlur={() => {
             if (!adding.phone.trim() && adding.name.trim().length >= 3) {
-              startTransition(async () => setSimilar(await similarCustomersAction(adding.name)));
+              startSimilarCheck(async () => setSimilar(await similarCustomersAction(adding.name)));
             }
           }}
           onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), save())}

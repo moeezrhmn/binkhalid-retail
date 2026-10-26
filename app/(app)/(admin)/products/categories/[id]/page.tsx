@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CategoryForm } from "@/components/products/category-form";
 import { getCategory, toAttributeForm } from "@/server/services/categories";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Edit category" };
 
 export default async function EditCategoryPage({ params }: PageProps<"/products/categories/[id]">) {
+  await requireAdmin();
   const { id } = await params;
   const category = /^[0-9a-f-]{36}$/.test(id) ? await getCategory(id) : null;
   if (!category) notFound();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { SlidersHorizontal } from "lucide-react";
 import { adjustStockAction } from "@/app/(app)/(admin)/inventory/actions";
@@ -27,6 +27,7 @@ export function AdjustStockButton({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const reasonId = useId();
   const [reason, setReason] = useState<Reason>("Damage");
   const [qty, setQty] = useState("");
   const [note, setNote] = useState("");
@@ -89,11 +90,11 @@ export function AdjustStockButton({
             </strong>
           </p>
           <div className="space-y-1">
-            <label htmlFor="adjust-reason" className="block text-xs font-medium text-gray-600">
+            <label htmlFor={reasonId} className="block text-xs font-medium text-gray-600">
               Reason
             </label>
             <Select
-              id="adjust-reason"
+              id={reasonId}
               value={reason}
               onChange={(e) => setReason(e.target.value as Reason)}
             >

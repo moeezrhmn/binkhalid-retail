@@ -11,6 +11,7 @@ import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/cn";
 import { rangeFromParams, rangeLabel } from "@/lib/date-filter";
 import { getSettings } from "@/lib/settings";
+import { requireAdmin } from "@/lib/auth";
 import {
   buildReport,
   CASH_FLOW_FILTERS,
@@ -25,6 +26,7 @@ const one = (value: string | string[] | undefined) =>
   typeof value === "string" ? value : undefined;
 
 export default async function ReportsPage({ searchParams }: PageProps<"/reports">) {
+  await requireAdmin();
   const params = await searchParams;
   const key = (REPORTS.find((r) => r.key === one(params.report))?.key ??
     "sales-by-product") as ReportKey;

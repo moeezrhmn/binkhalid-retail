@@ -46,7 +46,7 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   }
 
   clearFailures(keys);
-  await createSession({ uid: user.id, type: user.type });
+  await createSession({ uid: user.id, ver: user.sessionVersion });
   redirect(homePathFor({ id: user.id, name: user.name, type: user.type }));
 }
 

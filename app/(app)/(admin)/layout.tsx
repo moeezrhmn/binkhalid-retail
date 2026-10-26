@@ -1,7 +1,8 @@
 import { requireAdmin } from "@/lib/auth";
 
-// Staff are sent to /pos. Admin pages and their server actions must still call
-// requireAdmin() themselves: a layout check alone does not protect actions.
+// Sends staff to /pos on the first visit. Layouts are not re-run when moving
+// between pages inside them, so every admin page, server action and route
+// handler also calls requireAdmin() itself (tests/access.test.ts checks this).
 export default async function AdminLayout({ children }: LayoutProps<"/">) {
   await requireAdmin();
   return children;

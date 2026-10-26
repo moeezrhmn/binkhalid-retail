@@ -215,9 +215,25 @@ Sidebar navigation: Dashboard, POS / Billing, Sales (bill history, reprint, retu
 
 ### 6.1a Access by user type
 
-- **ADMIN:** everything.
-- **STAFF:** POS / Billing only. That covers scanning, cart, discounts, payments, completing sales, hold/resume, reprinting receipts, and finding or quick-adding the customer. Staff cannot see cost price or profit, and cannot open Products, Inventory, Customers, Reports, Dashboard, Settings, returns, the cash register, or cash out and expenses.
-- **Users (Settings → Users tab, admin only):** create admin or staff accounts, edit, reset password, deactivate or reactivate, delete an account that never served a bill. See Phase 5 for the full rules and the access checks.
+Two fixed roles. Every page, server action, route and print view checks the role **on the server**; hiding a menu item is never the protection. `tests/access.test.ts` fails if anything new forgets its check, and `tests/integration/staff-data.test.ts` checks what the POS sends to the browser.
+
+| Area | Admin | Staff |
+|---|---|---|
+| POS / Billing: scan, cart, discounts, payments, complete sale, hold / resume / discard | Yes | Yes |
+| POS: today's bills and receipt reprint | Yes | Yes |
+| POS: find a customer, quick-add a customer | Yes | Yes (sees name and phone only) |
+| POS: exchanges (started from a bill's Return page) | Yes | No |
+| Dashboard, Reports, Excel export | Yes | No |
+| Sales history, bill detail, returns and exchanges | Yes | No |
+| Cash Register (open, cash out, expenses, close) | Yes | No |
+| Products, categories, quick add, Barcode Labels | Yes | No |
+| Inventory, stock in, adjustments, movements, suppliers | Yes | No |
+| Customers, udhaar balances, receive payment, statements | Yes | No |
+| Settings: shop and printing | Yes | No |
+| Settings: Users (create admin or staff, edit, role, password, deactivate, delete; the default admin can never be deleted, deactivated or demoted) | Yes | No |
+| Product images | Yes | Yes (logged in) |
+
+What staff never see: cost prices, profit or margins, customers' udhaar balances or history, reports, and other users. A staff member who opens an admin address is sent back to the POS.
 
 ### 6.2 Products
 
@@ -346,29 +362,30 @@ Changes requested after Phase 4. These replace the earlier "one admin only" rule
 
 **User management (Settings → Users tab)**
 
-- [ ] Move user management back into **Settings** as its own tab ("Users"), not a separate sidebar item. The old Settings → Staff accounts address keeps working.
-- [ ] Any admin can create **another admin** as well as staff accounts.
-- [ ] Every account records **who created it** (`User.createdById`, empty for the first admin from the seed). The users list shows "Created by".
-- [ ] Edit name, username and role (admin / staff), reset password, deactivate and reactivate.
-- [ ] Delete an account only if it never served a bill, never recorded money, has no held bills and never created other accounts. Otherwise deactivate it, so the records keep their history.
-- [ ] Safety rules:
+- [x] Move user management back into **Settings** as its own tab ("Users"), not a separate sidebar item. The old Settings → Staff accounts address keeps working.
+- [x] Any admin can create **another admin** as well as staff accounts.
+- [x] Every account records **who created it** (`User.createdById`, empty for the first admin from the seed). The users list shows "Created by".
+- [x] Edit name, username and role (admin / staff), reset password, deactivate and reactivate.
+- [x] Delete an account only if it never served a bill, never recorded money, has no held bills and never created other accounts. Otherwise deactivate it, so the records keep their history.
+- [x] Safety rules:
   - There is always at least one active admin: the last active admin cannot be deactivated, deleted or changed to staff.
   - An admin cannot deactivate, delete or demote their own account (another admin must do it).
-- [ ] Deactivating someone, resetting their password or changing their role ends their sessions on every device (`User.sessionVersion`, checked on each request).
-- [ ] The users list shows role, status, bills served, last sale, created by and created date.
-- [ ] POS shows **"Served by: Name (Role)"** for the logged-in user. Receipts show the name.
+  - The **default admin** (the first account, created at setup: `createdById` is empty) always remains. No other admin can delete it, deactivate it, change it to staff, or change its name, username or password (that would let them take it over). Only the default admin itself can change its own details.
+- [x] Deactivating someone, resetting their password or changing their role ends their sessions on every device (`User.sessionVersion`, checked on each request).
+- [x] The users list shows role, status, bills served, last sale, created by and created date.
+- [x] POS shows **"Served by: Name (Role)"** for the logged-in user. Receipts show the name.
 
 **Access control: what staff can access and view**
 
-- [ ] Write the access matrix into section 6.1a: every page, action and print view, marked Admin or Staff. Staff today: POS / Billing only (scan, cart, discounts, payments, complete, hold/resume/discard, today's bills and receipt reprint, customer search and quick add).
-- [ ] Audit every page, server action, route handler and print page: each must check the role on the server (`requireAdmin` or `requireUser`), not just hide a menu item.
-- [ ] Decide and enforce what staff see inside the POS: no cost price or profit anywhere; customer search shows name and phone only (no udhaar balances, no purchase history).
-- [ ] Automated tests:
+- [x] Write the access matrix into section 6.1a: every page, action and print view, marked Admin or Staff. Staff today: POS / Billing only (scan, cart, discounts, payments, complete, hold/resume/discard, today's bills and receipt reprint, customer search and quick add).
+- [x] Audit every page, server action, route handler and print page: each must check the role on the server (`requireAdmin` or `requireUser`), not just hide a menu item.
+- [x] Decide and enforce what staff see inside the POS: no cost price or profit anywhere; customer search shows name and phone only (no udhaar balances, no purchase history).
+- [x] Automated tests:
   - Every admin-only server action and route handler refuses a staff session.
   - Every admin page sends staff back to the POS.
   - The data sent to the POS never includes cost price or profit.
   - A deactivated or role-changed user is logged out on their next request.
-- [ ] Re-check the POS customer quick add **without** a phone number (a test run stalled there; confirm whether it is an app bug).
+- [x] Re-check the POS customer quick add **without** a phone number. It was an app bug: the similar-name check disabled Save at the moment of the click. Fixed.
 
 ### Phase 6: Polish and launch
 

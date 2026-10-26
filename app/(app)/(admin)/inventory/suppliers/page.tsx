@@ -4,10 +4,12 @@ import { Card } from "@/components/ui/card";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Suppliers" };
 
 export default async function SuppliersPage() {
+  await requireAdmin();
   const suppliers = await db.supplier.findMany({
     orderBy: { name: "asc" },
     include: { _count: { select: { movements: true } } },

@@ -13,6 +13,7 @@ import { formatQty, formatRs } from "@/lib/format";
 import { UNIT_LABELS } from "@/lib/units";
 import { listCategories } from "@/server/services/categories";
 import { findVariantByCode, listProducts } from "@/server/services/products";
+import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Products" };
 
@@ -20,6 +21,7 @@ const one = (value: string | string[] | undefined) =>
   typeof value === "string" ? value : undefined;
 
 export default async function ProductsPage({ searchParams }: PageProps<"/products">) {
+  await requireAdmin();
   const params = await searchParams;
   const q = one(params.q)?.trim() ?? "";
   const categoryId = one(params.category);
