@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { splitBillDiscount } from "@/lib/money";
 import { validateQty } from "@/lib/units";
 import { variantLabel } from "@/lib/variants";
+import { requireOpenDay } from "./cash";
 import { UserError } from "./errors";
 import { createReturnTx, type ReturnItemInput } from "./returns";
 import { applyMovement } from "./stock";
@@ -132,6 +133,7 @@ async function lockHeld(tx: Tx, heldSaleId: string) {
  */
 export async function completeSale(input: CompleteInput, userId: string) {
   return db.$transaction(async (tx) => {
+    await requireOpenDay(tx);
     const customerId = await checkCustomer(tx, input.customerId, true);
     const priced = await priceCart(tx, input);
 

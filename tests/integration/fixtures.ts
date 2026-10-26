@@ -1,10 +1,14 @@
 import { db } from "@/lib/db";
 import { categorySchema, productCreateSchema } from "@/lib/schemas/catalog";
 import { saveCategory } from "@/server/services/categories";
+import { openSession } from "@/server/services/cash";
 import { createProduct } from "@/server/services/products";
 
-/** A category, one product with variants, a user and a customer, ready for selling. */
-export async function shopFixture() {
+/**
+ * A category, one product with variants, a user and a customer, ready for selling.
+ * The register day is opened too (billing needs an open day) unless `openDay` is false.
+ */
+export async function shopFixture({ openDay = true } = {}) {
   const caps = await saveCategory(
     categorySchema.parse({
       name: "Caps",
@@ -79,6 +83,8 @@ export async function shopFixture() {
     data: { name: "Cashier", type: "STAFF", username: "cashier", passwordHash: "x" },
   });
   const customer = await db.customer.create({ data: { name: "Ali Raza", phone: "03001234567" } });
+
+  if (openDay) await openSession(0);
 
   return {
     black: byCode("CAP-0001-BLK"),

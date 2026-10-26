@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatRs } from "@/lib/format";
+import { currentSession } from "@/server/services/cash";
 import { customerPurchases, customerStatement, getCustomer } from "@/server/services/customers";
 import { requireAdmin } from "@/lib/auth";
 
@@ -49,6 +50,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
             <ReceivePaymentButton
               customer={{ id: customer.id, name: customer.name }}
               balance={balance}
+              dayOpen={Boolean(await currentSession())}
             />
           </>
         }

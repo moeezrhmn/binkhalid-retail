@@ -26,7 +26,7 @@ type Row = {
 
 const METHODS = PAYMENT_METHODS.filter((m) => m !== "CREDIT");
 
-export function NoBillReturn() {
+export function NoBillReturn({ dayOpen }: { dayOpen: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [q, setQ] = useState("");
   const [results, setResults] = useState<LabelVariant[]>([]);
@@ -104,6 +104,11 @@ export function NoBillReturn() {
 
   return (
     <div className="space-y-3">
+      {!dayOpen ? (
+        <Alert tone="error">
+          The day is closed. Open it in Cash Register before taking a return or giving a refund.
+        </Alert>
+      ) : null}
       <Alert>
         Use this only when the customer has no bill. With a bill, open it from{" "}
         <strong>Bills</strong> so the refund matches what was paid.
@@ -241,7 +246,7 @@ export function NoBillReturn() {
             ))}
           </Select>
         </div>
-        <Button onClick={save} disabled={pending || rows.length === 0}>
+        <Button onClick={save} disabled={pending || rows.length === 0 || !dayOpen}>
           {pending ? "Saving…" : `Save return and refund ${formatRs(total)}`}
         </Button>
       </div>

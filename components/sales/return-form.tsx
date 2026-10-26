@@ -28,7 +28,10 @@ type Item = {
 
 export function ReturnForm({
   sale,
+  dayOpen,
 }: {
+  /** Refunds need an open register day. */
+  dayOpen: boolean;
   sale: {
     id: string;
     billNo: number;
@@ -177,10 +180,15 @@ export function ReturnForm({
         </div>
       </Card>
 
+      {!dayOpen ? (
+        <Alert tone="error">
+          The day is closed. Open it in Cash Register before taking a return or giving a refund.
+        </Alert>
+      ) : null}
       {error ? <Alert tone="error">{error}</Alert> : null}
 
       <div className="flex flex-wrap gap-2">
-        <Button onClick={refundNow} disabled={pending || picked.length === 0}>
+        <Button onClick={refundNow} disabled={pending || picked.length === 0 || !dayOpen}>
           <Undo2 className="size-4" aria-hidden />{" "}
           {pending ? "Saving…" : `Return and refund ${formatRs(refund)}`}
         </Button>

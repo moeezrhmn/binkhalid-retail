@@ -286,6 +286,8 @@ model CashSession {
   closedAt     DateTime? @db.Timestamptz(3)
   expectedCash Int?
   countedCash  Int?
+  /// The full breakdown saved at closing, so a closed day never changes.
+  summary      Json?
   note         String?
 }
 

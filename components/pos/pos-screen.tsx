@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Clock, History, Minus, Plus, ScanLine, Trash2, X } from "lucide-react";
 import {
@@ -11,7 +12,7 @@ import {
   lookupAction,
 } from "@/app/(app)/pos/actions";
 import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import {
@@ -80,12 +81,17 @@ export function PosScreen({
   userRole,
   exchange,
   saved,
+  dayOpen,
+  isAdmin,
 }: {
   userName: string;
   userRole: "ADMIN" | "STAFF";
   exchange: PosExchange | null;
   /** Shown after an exchange, which reloads the POS to leave exchange mode. */
   saved?: { billNo: number; giveBack: number } | null;
+  /** Billing needs an open register day. */
+  dayOpen: boolean;
+  isAdmin: boolean;
 }) {
   const router = useRouter();
   const scanRef = useRef<HTMLInputElement>(null);
@@ -508,6 +514,20 @@ export function PosScreen({
           </Alert>
         ) : null}
 
+        {!dayOpen ? (
+          <Alert tone="error" className="flex flex-wrap items-center justify-between gap-2">
+            <span>
+              <strong>The day is closed.</strong> Sales can be held, but not completed, until{" "}
+              {isAdmin ? "you open the day" : "an admin opens the day"} in Cash Register.
+            </span>
+            {isAdmin ? (
+              <Link href="/cash" className={buttonClasses({ size: "sm" })}>
+                Open Cash Register
+              </Link>
+            ) : null}
+          </Alert>
+        ) : null}
+
         {lastSale ? (
           <div
             role="status"
@@ -912,7 +932,7 @@ export function PosScreen({
             size="lg"
             className="w-full"
             onClick={complete}
-            disabled={busy || lines.length === 0}
+            disabled={busy || lines.length === 0 || !dayOpen}
           >
             {busy ? "Saving…" : "Complete sale & print (F9)"}
           </Button>

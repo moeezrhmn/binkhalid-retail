@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { UNIT_LABELS } from "@/lib/units";
 import { variantLabel } from "@/lib/variants";
-import { summarize } from "./cash";
+import { sessionSummary } from "./cash";
 import { totalOutstanding } from "./customers";
 
 // Sales are counted on the day they were completed and returns on the day they
@@ -601,7 +601,7 @@ async function cashSummary(range: DateRange): Promise<ReportTable> {
   });
   const rows: ReportRow[] = [];
   for (const session of sessions) {
-    const s = await summarize(session);
+    const s = await sessionSummary(session);
     const other = Object.values(s.otherMethods).reduce((total, amount) => total + (amount ?? 0), 0);
     rows.push({
       opened: session.openedAt,

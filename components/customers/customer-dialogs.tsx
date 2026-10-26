@@ -111,9 +111,12 @@ const METHODS = ["CASH", "CARD", "BANK_TRANSFER", "JAZZCASH", "EASYPAISA"] as co
 export function ReceivePaymentButton({
   customer,
   balance,
+  dayOpen,
 }: {
   customer: { id: string; name: string };
   balance: number;
+  /** Payments need an open register day. */
+  dayOpen: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -137,7 +140,13 @@ export function ReceivePaymentButton({
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} disabled={balance <= 0}>
+      <Button
+        onClick={() => setOpen(true)}
+        disabled={balance <= 0 || !dayOpen}
+        title={
+          !dayOpen ? "The day is closed. Open it in Cash Register to take payments." : undefined
+        }
+      >
         <HandCoins className="size-4" aria-hidden /> Receive payment
       </Button>
       <Dialog

@@ -2,7 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { closeDayAction, drawerOutAction, openDayAction } from "@/app/(app)/(admin)/cash/actions";
+import {
+  closeDayAction,
+  drawerOutAction,
+  openDayAction,
+  reopenDayAction,
+} from "@/app/(app)/(admin)/cash/actions";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/input";
@@ -169,5 +174,37 @@ export function CloseDayForm({ expectedCash }: { expectedCash: number }) {
       ) : null}
       {error ? <Alert tone="error">{error}</Alert> : null}
     </form>
+  );
+}
+
+/** Reopens the last day when it was closed by mistake. */
+export function ReopenDayButton({ closedAt }: { closedAt: string }) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  return (
+    <div className="space-y-2">
+      <Button
+        variant="secondary"
+        disabled={pending}
+        onClick={() => {
+          if (
+            !confirm(
+              `Reopen the day closed at ${closedAt}? Its count is cleared and it must be closed again.`,
+            )
+          )
+            return;
+          setError(null);
+          startTransition(async () => {
+            const result = await reopenDayAction();
+            if (!result.ok) return setError(result.error);
+            router.refresh();
+          });
+        }}
+      >
+        {pending ? "Reopening…" : "Reopen the last day"}
+      </Button>
+      {error ? <Alert tone="error">{error}</Alert> : null}
+    </div>
   );
 }

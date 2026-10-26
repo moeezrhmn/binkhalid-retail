@@ -3,6 +3,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { METHOD_LABELS } from "@/lib/cart";
 import { db } from "@/lib/db";
 import { normalizePhone } from "@/lib/format";
+import { requireOpenDay } from "./cash";
 import { isUniqueViolation, UserError } from "./errors";
 
 export type CustomerOption = { id: string; name: string; phone: string | null };
@@ -253,6 +254,7 @@ export async function receivePayment(
   }
   if (!RECEIVE_METHODS.includes(input.method)) throw new UserError("Pick how the money was paid");
   return db.$transaction(async (tx) => {
+    await requireOpenDay(tx);
     await tx.$queryRaw`SELECT id FROM "Customer" WHERE id = ${input.customerId}::uuid FOR UPDATE`;
     const customer = await tx.customer.findUnique({ where: { id: input.customerId } });
     if (!customer) throw new UserError("This customer no longer exists");

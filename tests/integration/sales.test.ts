@@ -5,8 +5,11 @@ import {
   currentSession,
   openSession,
   recordDrawerOut,
+  reopenLastSession,
+  sessionSummary,
   summarize,
 } from "@/server/services/cash";
+import { createCustomer, receivePayment } from "@/server/services/customers";
 import { createReturn } from "@/server/services/returns";
 import {
   completeSale,
@@ -361,7 +364,7 @@ describe("returns and exchanges", () => {
 
 describe("cash register", () => {
   it("expected cash = opening + cash sales + udhaar received − refunds − cash out − expenses", async () => {
-    const { black, user, customer } = await shopFixture();
+    const { black, user, customer } = await shopFixture({ openDay: false });
     await openSession(5000);
     await expect(openSession(100)).rejects.toThrow(/already open/);
 
@@ -417,6 +420,93 @@ describe("cash register", () => {
     await expect(
       recordDrawerOut({ type: "EXPENSE", amount: 0, note: "x", userId: user.id }),
     ).rejects.toThrow();
+  });
+});
+
+describe("a closed day", () => {
+  const sell = (fx: Awaited<ReturnType<typeof shopFixture>>, amount = 650) =>
+    completeSale(
+      {
+        customerId: fx.customer.id,
+        lines: [{ variantId: fx.black.id, qty: "1", discount: 0 }],
+        billDiscount: 0,
+        payments: [{ method: "CASH", amount }],
+      },
+      fx.user.id,
+    );
+
+  it("refuses sales, udhaar payments, refunds and cash out until a day is open", async () => {
+    const fx = await shopFixture({ openDay: false });
+    const owes = await createCustomer(
+      { name: "Owes", phone: null, openingBalance: 1000 },
+      fx.user.id,
+    );
+
+    await expect(sell(fx)).rejects.toThrow(/The day is closed/);
+    await expect(
+      receivePayment({ customerId: owes.id, amount: 500, method: "CASH" }, fx.user.id),
+    ).rejects.toThrow(/The day is closed/);
+    await expect(
+      recordDrawerOut({ type: "EXPENSE", amount: 100, note: "Tea", userId: fx.user.id }),
+    ).rejects.toThrow(/The day is closed/);
+    // Holding a bill moves no money, so it still works.
+    await holdSale(
+      { lines: [{ variantId: fx.black.id, qty: "1", discount: 0 }], billDiscount: 0 },
+      fx.user.id,
+    );
+
+    await openSession(0);
+    const sale = await sell(fx);
+    await closeSession(650);
+    const item = await db.saleItem.findFirstOrThrow({ where: { saleId: sale.id } });
+    await expect(
+      createReturn({
+        type: "RETURN",
+        originalSaleId: sale.id,
+        items: [{ saleItemId: item.id, qty: "1", restock: true }],
+        refunds: [{ method: "CASH", amount: 650 }],
+        userId: fx.user.id,
+      }),
+    ).rejects.toThrow(/The day is closed/);
+    expect(await stockOf(fx.black.id)).toBe("9");
+  });
+
+  it("keeps the figures it had at closing", async () => {
+    const fx = await shopFixture({ openDay: false });
+    await openSession(5000);
+    await sell(fx);
+    const closed = await closeSession(5650);
+    const frozen = await sessionSummary(closed);
+    expect(frozen).toMatchObject({ expectedCash: 5650, cashSales: 650 });
+
+    // The next day's sale never touches the closed day.
+    await openSession(5650);
+    await sell(fx);
+    const reread = await db.cashSession.findUniqueOrThrow({ where: { id: closed.id } });
+    expect(await sessionSummary(reread)).toEqual(frozen);
+  });
+
+  it("can be reopened when it was closed by mistake", async () => {
+    const fx = await shopFixture({ openDay: false });
+    const opened = await openSession(5000);
+    await sell(fx);
+    await closeSession(5650, "closed early");
+    await expect(sell(fx)).rejects.toThrow(/The day is closed/);
+
+    const reopened = await reopenLastSession("Owner");
+    expect(reopened).toMatchObject({
+      id: opened.id,
+      closedAt: null,
+      countedCash: null,
+      expectedCash: null,
+    });
+    expect(reopened.note).toMatch(/closed early \| Reopened by Owner at /);
+    await expect(reopenLastSession("Owner")).rejects.toThrow(/already open/);
+
+    await sell(fx);
+    const final = await closeSession(6300);
+    expect(final.expectedCash).toBe(6300);
+    expect(await sessionSummary(final)).toMatchObject({ cashSales: 1300, billCount: 2 });
   });
 });
 

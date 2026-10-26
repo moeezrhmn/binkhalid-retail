@@ -1,5 +1,5 @@
 import "server-only";
-import type { CashSession, PaymentMethod, Prisma } from "@/generated/prisma/client";
+import { Prisma, type CashSession, type PaymentMethod } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { UserError } from "./errors";
 
@@ -7,12 +7,27 @@ type Tx = Prisma.TransactionClient;
 
 const negate = (amount: number) => (amount === 0 ? 0 : -amount);
 
-// Only one register session can be open. Session changes take a transaction
-// advisory lock so two tabs cannot open or close at the same time.
+// Only one register day can be open, and money only moves while one is.
+// Opening, closing and reopening take this lock exclusively; every money movement
+// takes it shared, so a sale can never land in the middle of a close.
 const SESSION_LOCK = 4_310_001;
 
 async function lockSessions(tx: Tx) {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SESSION_LOCK})`;
+}
+
+export const DAY_CLOSED_MESSAGE =
+  "The day is closed. An admin must open the day in Cash Register before any billing, payment or refund.";
+
+/**
+ * Call inside the transaction of every money movement (sales, udhaar payments,
+ * refunds, cash out). Money taken while no day is open would belong to no day's
+ * count, so it is refused.
+ */
+export async function requireOpenDay(tx: Tx) {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock_shared(${SESSION_LOCK})`;
+  const open = await tx.cashSession.findFirst({ where: { closedAt: null }, select: { id: true } });
+  if (!open) throw new UserError(DAY_CLOSED_MESSAGE);
 }
 
 export async function currentSession() {
@@ -42,14 +57,17 @@ export async function recordDrawerOut(input: {
     throw new UserError("Enter an amount in whole rupees above 0");
   }
   if (!note) throw new UserError("Add a note saying what the money was for");
-  return db.cashFlow.create({
-    data: {
-      type: input.type,
-      method: "CASH",
-      amount: -input.amount,
-      note: note.slice(0, 200),
-      userId: input.userId,
-    },
+  return db.$transaction(async (tx) => {
+    await requireOpenDay(tx);
+    return tx.cashFlow.create({
+      data: {
+        type: input.type,
+        method: "CASH",
+        amount: -input.amount,
+        note: note.slice(0, 200),
+        userId: input.userId,
+      },
+    });
   });
 }
 
@@ -126,7 +144,41 @@ export async function closeSession(countedCash: number, note?: string | null) {
         closedAt,
         expectedCash: summary.expectedCash,
         countedCash,
+        summary,
         note: [open.note, note?.trim()].filter(Boolean).join(" | ") || null,
+      },
+    });
+  });
+}
+
+/** A closed day shows exactly what was recorded at closing; an open day is worked out live. */
+export async function sessionSummary(session: CashSession): Promise<SessionSummary> {
+  if (session.closedAt && session.summary) return session.summary as SessionSummary;
+  return summarize(session);
+}
+
+/**
+ * Reopens the most recent day when it was closed by mistake. Money taken after
+ * that is part of the same day again until it is closed with a new count.
+ */
+export async function reopenLastSession(userName: string) {
+  return db.$transaction(async (tx) => {
+    await lockSessions(tx);
+    if (await tx.cashSession.findFirst({ where: { closedAt: null } })) {
+      throw new UserError("A day is already open");
+    }
+    const last = await tx.cashSession.findFirst({ orderBy: { openedAt: "desc" } });
+    if (!last) throw new UserError("No day has been opened yet");
+    const [{ now }] = await tx.$queryRaw<{ now: Date }[]>`SELECT now() AS now`;
+    const stamp = now.toLocaleString("en-GB", { timeZone: "Asia/Karachi", hour12: true });
+    return tx.cashSession.update({
+      where: { id: last.id },
+      data: {
+        closedAt: null,
+        expectedCash: null,
+        countedCash: null,
+        summary: Prisma.DbNull,
+        note: [last.note, `Reopened by ${userName} at ${stamp}`].filter(Boolean).join(" | "),
       },
     });
   });

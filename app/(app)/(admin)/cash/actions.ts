@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
-import { closeSession, openSession, recordDrawerOut } from "@/server/services/cash";
+import {
+  closeSession,
+  openSession,
+  recordDrawerOut,
+  reopenLastSession,
+} from "@/server/services/cash";
 import { toResult, type Result } from "@/server/services/errors";
 
 const int = (value: unknown) => Number(String(value).replace(/[,\s]/g, ""));
@@ -48,5 +53,15 @@ export async function closeDayAction(
     return { id: session.id };
   });
   revalidatePath("/cash");
+  return result;
+}
+
+export async function reopenDayAction(): Promise<Result<null>> {
+  const admin = await requireAdmin();
+  const result = await toResult(async () => {
+    await reopenLastSession(admin.name);
+    return null;
+  });
+  revalidatePath("/", "layout");
   return result;
 }

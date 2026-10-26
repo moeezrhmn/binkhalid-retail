@@ -4,6 +4,7 @@ import type { SalePaymentMethod } from "@/lib/cart";
 import { db } from "@/lib/db";
 import { qtyToMilli, roundDiv } from "@/lib/money";
 import { validateQty } from "@/lib/units";
+import { requireOpenDay } from "./cash";
 import { UserError } from "./errors";
 import { applyMovement } from "./stock";
 
@@ -184,7 +185,10 @@ export async function createReturnTx(
 export async function createReturn(
   input: Parameters<typeof createReturnTx>[1] & { type: "RETURN" },
 ) {
-  return db.$transaction((tx) => createReturnTx(tx, input));
+  return db.$transaction(async (tx) => {
+    await requireOpenDay(tx);
+    return createReturnTx(tx, input);
+  });
 }
 
 /**

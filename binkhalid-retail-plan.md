@@ -126,7 +126,7 @@ Rules for the model:
   - `CASH_OUT` and `EXPENSE` are admin only and need a note.
   - `customerId` is required only for udhaar: any row with method `CREDIT`, plus every `CREDIT_RECEIVED` and `OPENING_BALANCE` row.
   - Udhaar balance = sum of `CREDIT` rows − sum of `CREDIT_RECEIVED` rows for the customer. It is never stored.
-- `CashSession.expectedCash` = `openingCash` + sum of `CASH` rows in `CashFlow` between `openedAt` and `closedAt`. Only one session can be open at a time.
+- `CashSession.expectedCash` = `openingCash` + sum of `CASH` rows in `CashFlow` between `openedAt` and `closedAt`. Only one session can be open at a time, and money can only move while one is open. At closing the full breakdown is saved in `CashSession.summary`, so a closed day never changes.
 - `User`: the first ADMIN is created by the seed (its `createdById` is empty). Any admin can create admins and staff, and `createdById` records who did. There must always be at least one active admin. Accounts with history are deactivated, not deleted. Each request checks that the user is still active and that the session's `sessionVersion` is current, so deactivating someone, resetting their password or changing their role logs them out at once.
 - **Counters:** bill numbers, return numbers and each category's product number come from the `Counter` table (keys like `bill`, `return`, `product:<categoryId>`; keyed by id so changing a prefix never restarts the numbering).
   - Increment them atomically inside the same transaction (`value = value + 1`). Never use "max + 1".
@@ -283,7 +283,9 @@ The client enters hundreds of products by hand, with no import. Entry speed is a
   - **Open the day:** enter the opening cash in the drawer.
   - **Cash out / expense:** during the day the admin can record money taken from the drawer, either a cash out (owner withdrawal) or an expense, with an amount and a required note. Each one writes a negative `CashFlow` row (`CASH_OUT` or `EXPENSE`, method `CASH`).
   - **Close the day:** see expected cash (opening + cash sales + udhaar received in cash − cash refunds − cash out − expenses), enter the counted cash, and see the difference.
-  - Past sessions can be viewed and printed.
+  - Past sessions can be viewed and printed. A closed day keeps the figures recorded at closing; later money never changes it.
+  - **No money moves while the day is closed** (or not opened yet): sales, udhaar payments, refunds and cash out are refused, so nothing can slip past a day's count. The POS shows "The day is closed" and Complete is disabled; held bills still work. Closing and billing use a database lock, so a sale cannot land half-way through a close.
+  - **Reopen:** if the day was closed by mistake, an admin can reopen the most recent day. Its count is cleared and it must be closed again; the note records who reopened it and when.
 
 ### 6.4 Inventory
 

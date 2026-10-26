@@ -8,7 +8,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { db } from "@/lib/db";
 import { formatDateTime, formatRs } from "@/lib/format";
-import { listDrawerOuts, summarize } from "@/server/services/cash";
+import { listDrawerOuts, sessionSummary } from "@/server/services/cash";
 import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Cash day" };
@@ -20,7 +20,7 @@ export default async function CashDayPage({ params }: PageProps<"/cash/[id]">) {
     ? await db.cashSession.findUnique({ where: { id } })
     : null;
   if (!session) notFound();
-  const [summary, outs] = await Promise.all([summarize(session), listDrawerOuts(session)]);
+  const [summary, outs] = await Promise.all([sessionSummary(session), listDrawerOuts(session)]);
 
   return (
     <>

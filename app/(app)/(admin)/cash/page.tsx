@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CashSummary } from "@/components/cash/cash-summary";
-import { CloseDayForm, DrawerOutForm, OpenDayForm } from "@/components/cash/register-forms";
+import {
+  CloseDayForm,
+  DrawerOutForm,
+  OpenDayForm,
+  ReopenDayButton,
+} from "@/components/cash/register-forms";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -31,9 +36,18 @@ export default async function CashPage() {
           <Card className="space-y-2 p-4">
             <h2 className="text-sm font-semibold text-gray-900">The day is not open</h2>
             <p className="text-sm text-gray-500">
-              Count the cash in the drawer before the first sale and enter it here.
+              No sales, udhaar payments or refunds can be taken until the day is opened. Count the
+              cash in the drawer and enter it here.
             </p>
             <OpenDayForm />
+            {sessions[0]?.closedAt ? (
+              <div className="border-t border-gray-100 pt-3">
+                <p className="mb-2 text-sm text-gray-500">
+                  Closed the last day by mistake? Reopen it instead of starting a new one.
+                </p>
+                <ReopenDayButton closedAt={formatDateTime(sessions[0].closedAt)} />
+              </div>
+            ) : null}
           </Card>
         ) : (
           <>
