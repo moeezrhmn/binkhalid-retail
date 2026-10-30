@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BarList } from "@/components/charts/bar-list";
 import { ColumnChart } from "@/components/charts/column-chart";
+import { dayColumns } from "@/components/charts/day-columns";
 import { PageHeader } from "@/components/page-header";
+import { StatTile } from "@/components/stat-tile";
 import { PeriodFilter } from "@/components/period-filter";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
-import { rangeFromParams } from "@/lib/date-filter";
+import { resolvePeriod } from "@/lib/period";
 import { formatRs } from "@/lib/format";
 import { buildReport, salesByDay, salesTotals } from "@/server/services/reports";
 import { requireAdmin } from "@/lib/auth";
@@ -18,32 +20,10 @@ const one = (value: string | string[] | undefined) =>
   typeof value === "string" ? value : undefined;
 const DAY = 24 * 60 * 60 * 1000;
 
-const dayLabel = new Intl.DateTimeFormat("en-GB", {
-  weekday: "short",
-  day: "numeric",
-  timeZone: "UTC",
-});
-const dayDetail = new Intl.DateTimeFormat("en-GB", {
-  weekday: "long",
-  day: "numeric",
-  month: "short",
-  timeZone: "UTC",
-});
-
-function StatTile({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <Card className="p-4">
-      <p className="text-xs font-medium text-gray-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-gray-900">{value}</p>
-      {hint ? <p className="mt-0.5 text-xs text-gray-400">{hint}</p> : null}
-    </Card>
-  );
-}
-
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   await requireAdmin();
   const params = await searchParams;
-  const { period, range, from, to } = rangeFromParams({
+  const { period, range, from, to } = await resolvePeriod({
     period: one(params.period),
     from: one(params.from),
     to: one(params.to),
@@ -67,6 +47,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     month: "this month",
     custom: "in this period",
   }[period];
+  const topSellingQuery = new URLSearchParams({ report: "top-selling", period });
+  if (period === "custom" && from) topSellingQuery.set("from", from);
+  if (period === "custom" && to) topSellingQuery.set("to", to);
 
   return (
     <>
@@ -89,7 +72,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           />
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
           <Card className="p-4 lg:col-span-2">
             <h2 className="text-sm font-semibold text-gray-900">Daily net sales</h2>
             <p className="mb-2 text-xs text-gray-500">
@@ -97,15 +80,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             </p>
             <ColumnChart
               label="Daily net sales"
-              data={days.map((d) => {
-                const date = new Date(`${d.day}T00:00:00Z`);
-                return {
-                  key: d.day,
-                  label: dayLabel.format(date),
-                  detail: dayDetail.format(date),
-                  value: d.amount,
-                };
-              })}
+              data={dayColumns(days.map((d) => ({ day: d.day, value: d.amount })))}
             />
           </Card>
           <Card className="p-4">
@@ -123,12 +98,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           </Card>
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <Card>
             <div className="flex items-center justify-between px-4 pt-3">
               <h2 className="text-sm font-semibold text-gray-900">Top-selling {periodName}</h2>
               <Link
-                href={`/reports?report=top-selling${period !== "today" ? `&period=${period}` : ""}`}
+                href={`/reports?${topSellingQuery}`}
                 className="text-xs text-brand-700 hover:underline"
               >
                 Full report

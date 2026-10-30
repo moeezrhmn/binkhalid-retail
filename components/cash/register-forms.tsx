@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { formatRs } from "@/lib/format";
+import { useConfirm } from "@/components/ui/confirm";
 
 export function OpenDayForm() {
   const router = useRouter();
@@ -117,6 +118,7 @@ export function DrawerOutForm() {
 }
 
 export function CloseDayForm({ expectedCash }: { expectedCash: number }) {
+  const confirm = useConfirm();
   const router = useRouter();
   const [counted, setCounted] = useState("");
   const [note, setNote] = useState("");
@@ -126,10 +128,15 @@ export function CloseDayForm({ expectedCash }: { expectedCash: number }) {
   return (
     <form
       className="space-y-2"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         if (!counted) return setError("Count the drawer and enter the amount");
-        if (!confirm(`Close the day with ${formatRs(Number(counted))} counted?`)) return;
+        const ok = await confirm({
+          title: "Close the day?",
+          message: `Counted cash: ${formatRs(Number(counted))}. After closing, no sale, refund or payment can be taken until a day is open again.`,
+          confirmLabel: "Close the day",
+        });
+        if (!ok) return;
         setError(null);
         startTransition(async () => {
           const result = await closeDayAction(counted, note);
@@ -185,6 +192,7 @@ export function ReopenDayButton({
   closedAt: string;
   size?: "sm" | "md";
 }) {
+  const confirm = useConfirm();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -194,13 +202,13 @@ export function ReopenDayButton({
         variant="secondary"
         size={size}
         disabled={pending}
-        onClick={() => {
-          if (
-            !confirm(
-              `Reopen the day closed at ${closedAt}? Its count is cleared and it must be closed again.`,
-            )
-          )
-            return;
+        onClick={async () => {
+          const ok = await confirm({
+            title: "Reopen the last day?",
+            message: `The day closed at ${closedAt} opens again. Its count is cleared, so it must be counted and closed again.`,
+            confirmLabel: "Reopen the day",
+          });
+          if (!ok) return;
           setError(null);
           startTransition(async () => {
             const result = await reopenDayAction();

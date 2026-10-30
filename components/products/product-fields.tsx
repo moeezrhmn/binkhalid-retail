@@ -98,7 +98,7 @@ export function ImageField({
             setPreview(file ? URL.createObjectURL(file) : null);
             onChange(file);
           }}
-          className="text-sm text-gray-600 file:mr-3 file:h-9 file:cursor-pointer file:rounded-lg file:border-0 file:bg-white file:px-3 file:text-[13px] file:font-semibold file:text-gray-900 file:shadow-btn hover:file:bg-gray-50"
+          className="min-w-0 text-sm text-gray-600 file:mr-3 file:h-9 file:cursor-pointer file:rounded-lg file:border-0 file:bg-white file:px-3 file:text-[13px] file:font-semibold file:text-gray-900 file:shadow-btn hover:file:bg-gray-50"
         />
         {currentUrl && !preview && onRemoveChange ? (
           <button

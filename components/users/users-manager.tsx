@@ -20,6 +20,7 @@ import { Select } from "@/components/ui/select";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { ROLE_LABELS } from "@/lib/roles";
+import { useConfirm } from "@/components/ui/confirm";
 
 type Role = "ADMIN" | "STAFF";
 
@@ -108,6 +109,7 @@ export function UsersManager({
   users: UserRow[];
   currentUserId: string;
 }) {
+  const confirm = useConfirm();
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<UserRow | null>(null);
@@ -126,10 +128,15 @@ export function UsersManager({
       router.refresh();
     });
 
-  const toggle = (user: UserRow) => {
+  const toggle = async (user: UserRow) => {
     if (
       user.isActive &&
-      !confirm(`Deactivate ${user.name}? They are logged out at once and cannot log in.`)
+      !(await confirm({
+        title: `Deactivate ${user.name}?`,
+        message: "They are logged out at once and cannot log in until activated again.",
+        confirmLabel: "Deactivate",
+        tone: "danger",
+      }))
     )
       return;
     run(
@@ -138,8 +145,14 @@ export function UsersManager({
     );
   };
 
-  const remove = (user: UserRow) => {
-    if (!confirm(`Delete ${user.name}'s account? This cannot be undone.`)) return;
+  const remove = async (user: UserRow) => {
+    const ok = await confirm({
+      title: `Delete ${user.name}'s account?`,
+      message: "This cannot be undone.",
+      confirmLabel: "Delete account",
+      tone: "danger",
+    });
+    if (!ok) return;
     run(() => deleteUserAction(user.id), `${user.name}'s account was deleted.`);
   };
 

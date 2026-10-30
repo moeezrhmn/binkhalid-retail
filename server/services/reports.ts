@@ -189,12 +189,16 @@ export async function salesByDay(range: DateRange) {
     SELECT day, SUM(amount) AS amount FROM (SELECT * FROM sold UNION ALL SELECT * FROM returned) t
     GROUP BY day`;
   const byDay = new Map(rows.map((row) => [row.day, Number(row.amount)]));
+  return eachDay(range).map((day) => ({ day, amount: byDay.get(day) ?? 0 }));
+}
 
-  const days: { day: string; amount: number }[] = [];
+/** Every Pakistan calendar day ("YYYY-MM-DD") in the range, at most about 400. */
+export function eachDay(range: DateRange): string[] {
+  const days: string[] = [];
   const last = toYmd(shopDate(new Date(range.to.getTime() - 1)));
   for (let ymd = shopDate(range.from); ;) {
     const day = toYmd(ymd);
-    days.push({ day, amount: byDay.get(day) ?? 0 });
+    days.push(day);
     if (day >= last || days.length > 400) break;
     const next = new Date(Date.UTC(ymd.year, ymd.month - 1, ymd.day + 1));
     ymd = { year: next.getUTCFullYear(), month: next.getUTCMonth() + 1, day: next.getUTCDate() };
@@ -202,11 +206,63 @@ export async function salesByDay(range: DateRange) {
   return days;
 }
 
+/** Sums values per shop day; days without any are 0. */
+function dailySeries(range: DateRange, items: { at: Date; value: number }[]) {
+  const byDay = new Map<string, number>();
+  for (const item of items) {
+    const day = toYmd(shopDate(item.at));
+    byDay.set(day, (byDay.get(day) ?? 0) + item.value);
+  }
+  return eachDay(range).map((day) => ({ day, value: byDay.get(day) ?? 0 }));
+}
+
+/** Profit per shop day, worked out the same way as the Profit report. */
+export async function profitByDay(range: DateRange) {
+  const rows = await db.$queryRaw<{ day: string; amount: Prisma.Decimal | null }[]>`
+    WITH sold AS (
+      SELECT to_char(s."completedAt" AT TIME ZONE ${SHOP_TIME_ZONE}, 'YYYY-MM-DD') AS day,
+             SUM(si."netTotal") - SUM(si."costSnapshot" * si.qty) AS amount
+      FROM "SaleItem" si JOIN "Sale" s ON s.id = si."saleId"
+      WHERE s.status = 'COMPLETED' AND s."completedAt" >= ${range.from} AND s."completedAt" < ${range.to}
+      GROUP BY 1
+    ), returned AS (
+      SELECT to_char(r."createdAt" AT TIME ZONE ${SHOP_TIME_ZONE}, 'YYYY-MM-DD') AS day,
+             SUM(CASE WHEN ri.restock THEN COALESCE(si."costSnapshot", v."costPrice") * ri.qty ELSE 0 END)
+               - SUM(ri.amount) AS amount
+      FROM "SaleReturnItem" ri
+      JOIN "SaleReturn" r ON r.id = ri."saleReturnId"
+      JOIN "Variant" v ON v.id = ri."variantId"
+      LEFT JOIN "SaleItem" si ON si.id = ri."saleItemId"
+      WHERE r."createdAt" >= ${range.from} AND r."createdAt" < ${range.to}
+      GROUP BY 1
+    )
+    SELECT day, SUM(amount) AS amount FROM (SELECT * FROM sold UNION ALL SELECT * FROM returned) t
+    GROUP BY day`;
+  const byDay = new Map(rows.map((row) => [row.day, Math.round(n(row.amount))]));
+  return eachDay(range).map((day) => ({ day, value: byDay.get(day) ?? 0 }));
+}
+
 // ----- Report tables (shared by the screen, Excel export and print) -----
 
 export type ColumnFormat = "text" | "rs" | "qty" | "int" | "pct" | "datetime";
 export type ReportColumn = { key: string; label: string; format: ColumnFormat };
 export type ReportRow = Record<string, string | number | Date | null>;
+export type ReportTile = {
+  label: string;
+  value: number;
+  format: "rs" | "int" | "pct";
+  hint?: string;
+};
+export type ReportChart = {
+  title: string;
+  note?: string;
+} & (
+  | { kind: "bars"; bars: { key: string; label: string; value: number; share?: number }[] }
+  | { kind: "days"; days: { day: string; value: number }[] }
+);
+/** Headline numbers and one chart shown above the table (screen and print, not Excel). */
+export type ReportVisual = { tiles: ReportTile[]; chart?: ReportChart };
+
 export type ReportTable = {
   title: string;
   description: string;
@@ -214,6 +270,7 @@ export type ReportTable = {
   rows: ReportRow[];
   totals?: ReportRow;
   note?: string;
+  visual?: ReportVisual;
 };
 
 export const REPORTS = [
@@ -236,6 +293,17 @@ export const UNDATED: ReadonlySet<ReportKey> = new Set(["current-stock", "low-st
 
 const sum = (rows: ReportRow[], key: string) => rows.reduce((s, r) => s + Number(r[key] ?? 0), 0);
 const pct = (part: number, whole: number) => (whole ? Math.round((part / whole) * 1000) / 10 : 0);
+const TOP = 10;
+const topBars = (rows: ReportRow[], label: string, value: string) =>
+  rows
+    .filter((row) => Number(row[value]) > 0)
+    .sort((a, b) => Number(b[value]) - Number(a[value]))
+    .slice(0, TOP)
+    .map((row) => ({
+      key: String(row[label]),
+      label: String(row[label]),
+      value: Number(row[value]),
+    }));
 
 function itemName(v: VariantMetric) {
   return v.variantText ? `${v.productName} · ${v.variantText}` : v.productName;
@@ -280,6 +348,24 @@ async function byProduct(range: DateRange): Promise<ReportTable> {
       sales: sum(rows, "sales"),
       profit: sum(rows, "profit"),
     },
+    visual: {
+      tiles: [
+        { label: "Net sales", value: sum(rows, "sales"), format: "rs" },
+        { label: "Profit", value: sum(rows, "profit"), format: "rs" },
+        { label: "Margin", value: pct(sum(rows, "profit"), sum(rows, "sales")), format: "pct" },
+        {
+          label: "Products sold",
+          value: rows.filter((r) => Number(r.qty) > 0).length,
+          format: "int",
+        },
+      ],
+      chart: {
+        kind: "bars",
+        title: `Top ${TOP} products by net sales`,
+        note: rows.length > TOP ? `The table below lists all ${rows.length}.` : undefined,
+        bars: topBars(rows, "product", "sales"),
+      },
+    },
   };
 }
 
@@ -319,6 +405,30 @@ async function byCategory(range: DateRange): Promise<ReportTable> {
       sales: total,
       share: rows.length ? 100 : 0,
       profit: sum(rows, "profit"),
+    },
+    visual: {
+      tiles: [
+        { label: "Net sales", value: total, format: "rs" },
+        { label: "Profit", value: sum(rows, "profit"), format: "rs" },
+        { label: "Margin", value: pct(sum(rows, "profit"), total), format: "pct" },
+        {
+          label: "Categories sold",
+          value: rows.filter((r) => Number(r.sales) > 0).length,
+          format: "int",
+        },
+      ],
+      chart: {
+        kind: "bars",
+        title: "Net sales by category",
+        bars: rows
+          .filter((r) => Number(r.sales) > 0)
+          .map((r) => ({
+            key: String(r.category),
+            label: String(r.category),
+            value: Number(r.sales),
+            share: Number(r.share),
+          })),
+      },
     },
   };
 }
@@ -366,6 +476,14 @@ async function byPayment(range: DateRange): Promise<ReportTable> {
       net: sum(rows, "net"),
     },
     note: "Exchanges are left out: the returned goods paid for the new ones.",
+    visual: {
+      tiles: [
+        { label: "Taken", value: sum(rows, "sales"), format: "rs", hint: "Including udhaar given" },
+        { label: "Refunded", value: sum(rows, "refunds"), format: "rs" },
+        { label: "Net", value: sum(rows, "net"), format: "rs" },
+      ],
+      chart: { kind: "bars", title: "Net by payment method", bars: topBars(rows, "method", "net") },
+    },
   };
 }
 
@@ -424,6 +542,22 @@ async function byStaff(range: DateRange): Promise<ReportTable> {
       returns: sum(table, "returns"),
       net: sum(table, "net"),
     },
+    visual: {
+      tiles: [
+        { label: "Bills", value: sum(table, "bills"), format: "int" },
+        { label: "Net sales", value: sum(table, "net"), format: "rs" },
+        {
+          label: "Average bill",
+          value: sum(table, "bills") ? Math.round(sum(table, "sales") / sum(table, "bills")) : 0,
+          format: "rs",
+        },
+      ],
+      chart: {
+        kind: "bars",
+        title: "Net sales by salesperson",
+        bars: topBars(table, "staff", "net"),
+      },
+    },
   };
 }
 
@@ -451,6 +585,19 @@ async function topSelling(range: DateRange, limit = 20): Promise<ReportTable> {
       sales: v.netSales,
       stock: v.stockQty,
     })),
+    visual: {
+      tiles: [],
+      chart: {
+        kind: "bars",
+        title: "Top sellers by net sales",
+        note: "Same items as the table, ordered by money instead of quantity.",
+        bars: variants
+          .filter((v) => v.netSales > 0)
+          .sort((a, b) => b.netSales - a.netSales)
+          .slice(0, TOP)
+          .map((v) => ({ key: v.variantId, label: itemName(v), value: v.netSales })),
+      },
+    },
   };
 }
 
@@ -479,6 +626,18 @@ async function slowMoving(range: DateRange): Promise<ReportTable> {
     ],
     rows,
     totals: { item: "Total", stock: sum(rows, "stock"), value: sum(rows, "value") },
+    visual: {
+      tiles: [
+        { label: "Items listed", value: rows.length, format: "int" },
+        { label: "Not sold at all", value: rows.filter((r) => r.sold <= 0).length, format: "int" },
+        {
+          label: "Money tied up",
+          value: sum(rows, "value"),
+          format: "rs",
+          hint: "Stock value at cost",
+        },
+      ],
+    },
   };
 }
 
@@ -518,6 +677,15 @@ async function profit(range: DateRange): Promise<ReportTable> {
       cost: sum(rows, "cost"),
       profit: profitTotal,
       margin: pct(profitTotal, sales),
+    },
+    visual: {
+      tiles: [
+        { label: "Net sales", value: sales, format: "rs" },
+        { label: "Cost", value: sum(rows, "cost"), format: "rs" },
+        { label: "Profit", value: profitTotal, format: "rs" },
+        { label: "Margin", value: pct(profitTotal, sales), format: "pct" },
+      ],
+      chart: { kind: "days", title: "Profit per day", days: await profitByDay(range) },
     },
   };
 }
@@ -572,6 +740,16 @@ async function stockTable(lowOnly: boolean): Promise<ReportTable> {
           { key: "unit", label: "Unit", format: "text" },
         ],
         rows: rows.sort((a, b) => a.stock - b.stock),
+        visual: {
+          tiles: [
+            { label: "Items to reorder", value: rows.length, format: "int" },
+            {
+              label: "Out of stock",
+              value: rows.filter((r) => r.stock <= 0).length,
+              format: "int",
+            },
+          ],
+        },
       }
     : {
         title: "Current stock",
@@ -590,6 +768,18 @@ async function stockTable(lowOnly: boolean): Promise<ReportTable> {
           item: "Total",
           costValue: sum(rows, "costValue"),
           saleValue: sum(rows, "saleValue"),
+        },
+        visual: {
+          tiles: [
+            { label: "Items in the list", value: rows.length, format: "int" },
+            { label: "Value at cost", value: sum(rows, "costValue"), format: "rs" },
+            { label: "Value at sale price", value: sum(rows, "saleValue"), format: "rs" },
+            {
+              label: "Profit if all sold",
+              value: sum(rows, "saleValue") - sum(rows, "costValue"),
+              format: "rs",
+            },
+          ],
         },
       };
 }
@@ -649,6 +839,28 @@ async function cashSummary(range: DateRange): Promise<ReportTable> {
       difference: sum(rows, "difference"),
     },
     note: rows.length ? undefined : "No register days were opened in this period.",
+    visual: {
+      tiles: [
+        { label: "Register days", value: rows.length, format: "int" },
+        { label: "Cash sales", value: sum(rows, "cashSales"), format: "rs" },
+        { label: "Expenses", value: sum(rows, "expenses"), format: "rs" },
+        {
+          label: "Short / over",
+          value: sum(rows, "difference"),
+          format: "rs",
+          hint: "Counted minus expected, closed days",
+        },
+      ],
+      chart: {
+        kind: "days",
+        title: "Short / over per day",
+        note: "Above zero: more cash than expected. Below zero: the drawer was short.",
+        days: dailySeries(
+          range,
+          rows.map((row) => ({ at: row.opened as Date, value: Number(row.difference ?? 0) })),
+        ),
+      },
+    },
   };
 }
 
@@ -686,6 +898,11 @@ async function cashFlow(
       user: { select: { name: true } },
     },
   });
+  // Udhaar given and exchanges are not money, so the chart and tiles leave them
+  // out unless one method was picked on purpose.
+  const money = flows.filter((f) => method || (f.method !== "CREDIT" && f.method !== "EXCHANGE"));
+  const moneyIn = money.filter((f) => f.amount > 0).reduce((s, f) => s + f.amount, 0);
+  const moneyOut = money.filter((f) => f.amount < 0).reduce((s, f) => s - f.amount, 0);
   const rows = flows.map((f) => ({
     when: f.createdAt,
     type: TYPE_LABELS[f.type],
@@ -724,6 +941,22 @@ async function cashFlow(
         : method
           ? undefined
           : "Filter by one method to see its total (e.g. Cash for the drawer).",
+    visual: {
+      tiles: [
+        { label: "Money in", value: moneyIn, format: "rs" },
+        { label: "Money out", value: moneyOut, format: "rs" },
+        { label: "Net", value: moneyIn - moneyOut, format: "rs" },
+      ],
+      chart: {
+        kind: "days",
+        title: method ? `Net per day (${METHOD_LABELS[method]})` : "Net money in per day",
+        note: method ? undefined : "All payment methods except udhaar and exchanges.",
+        days: dailySeries(
+          range,
+          money.map((f) => ({ at: f.createdAt, value: f.amount })),
+        ),
+      },
+    },
   };
 }
 

@@ -81,7 +81,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
           </div>
         </Card>
 
-        <div className="grid gap-3 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
           <Card>
             <h2 className="px-4 pt-3 text-sm font-semibold text-gray-900">Udhaar statement</h2>
             <Table>

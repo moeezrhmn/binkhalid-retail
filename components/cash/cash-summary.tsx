@@ -24,7 +24,7 @@ export function CashSummary({
   const others = Object.entries(summary.otherMethods).filter(([, amount]) => amount !== 0);
 
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       <dl className="space-y-1 text-sm">
         {rows.map(([label, amount, sign]) => (
           <div key={label} className="flex justify-between">

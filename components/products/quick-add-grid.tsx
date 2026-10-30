@@ -14,6 +14,7 @@ import { cn } from "@/lib/cn";
 import { UNIT_LABELS } from "@/lib/units";
 import { cleanValues } from "@/lib/variants";
 import type { FormCategory } from "./product-form";
+import { useConfirm } from "@/components/ui/confirm";
 
 type Row = {
   key: string;
@@ -50,6 +51,7 @@ export function QuickAddGrid({
   categories: FormCategory[];
   initialCategoryId?: string;
 }) {
+  const confirm = useConfirm();
   const [categoryId, setCategoryId] = useState(
     categories.find((c) => c.id === initialCategoryId)?.id ?? categories[0]?.id ?? "",
   );
@@ -84,10 +86,15 @@ export function QuickAddGrid({
     }
   };
 
-  const changeCategory = (id: string) => {
+  const changeCategory = async (id: string) => {
     if (
       rows.some((row) => !isBlank(row)) &&
-      !confirm("Changing the category clears the rows. Continue?")
+      !(await confirm({
+        title: "Change the category?",
+        message: "The rows you have typed are cleared.",
+        confirmLabel: "Change category",
+        tone: "danger",
+      }))
     ) {
       return;
     }

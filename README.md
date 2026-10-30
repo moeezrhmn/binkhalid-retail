@@ -16,27 +16,32 @@ Stack: Next.js 16 (App Router), TypeScript, Tailwind CSS 4, Prisma 7, PostgreSQL
    ```bash
    npm install
    npm run db:migrate
-   npm run db:seed
+   npm run db:seed:sample   # or db:seed for no sample products
    ```
 
 4. Start the app with `npm run dev` and log in with `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 
+After pulling changes that add a migration, run `npm run db:migrate` and restart
+`npm run dev`. A dev server started before the migration keeps the old Prisma
+client and fails on the new columns.
+
 ## Scripts
 
-| Script               | What it does                               |
-| -------------------- | ------------------------------------------ |
-| `npm run dev`        | Development server                         |
-| `npm run build`      | Generate Prisma client and build           |
-| `npm test`           | Unit tests (Vitest)                        |
-| `npm run test:db`    | Database tests, in a separate `test` schema |
-| `npm run lint`       | ESLint                                     |
-| `npm run typecheck`  | TypeScript check                           |
-| `npm run db:migrate` | Create and apply a migration (development) |
-| `npm run db:deploy`  | Apply migrations (production)              |
-| `npm run db:seed`    | Admin, settings, categories, sample data   |
+| Script                   | What it does                                 |
+| ------------------------ | -------------------------------------------- |
+| `npm run dev`            | Development server                           |
+| `npm run build`          | Generate Prisma client and build             |
+| `npm test`               | Unit tests (Vitest)                          |
+| `npm run test:db`        | Database tests, in a separate `test` schema  |
+| `npm run lint`           | ESLint                                       |
+| `npm run typecheck`      | TypeScript check                             |
+| `npm run db:migrate`     | Create and apply a migration (development)   |
+| `npm run db:deploy`      | Apply migrations (production)                |
+| `npm run db:seed`        | Admin, settings and categories               |
+| `npm run db:seed:sample` | The same, plus sample products (development) |
 
-Sample products are only seeded outside production and only into an empty
-product table. Set `SEED_SAMPLE_DATA=false` to skip them.
+Sample products are only seeded on request, never with `NODE_ENV=production`,
+and only into an empty product table.
 
 ## Production (VPS with PM2)
 
@@ -63,3 +68,6 @@ npm run db:deploy
 npm run build
 pm2 reload binkhalid-retail
 ```
+
+The app sends its own security headers (see `next.config.ts`). Add
+`Strict-Transport-Security` in the reverse proxy once HTTPS works.

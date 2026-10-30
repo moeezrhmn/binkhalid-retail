@@ -93,7 +93,7 @@ export default async function BillPage({ params }: PageProps<"/sales/[id]">) {
         </Table>
       </Card>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <Card className="space-y-1 p-4 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-600">Subtotal</span>

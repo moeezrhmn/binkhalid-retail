@@ -18,7 +18,7 @@ export async function openDayAction(openingCash: string): Promise<Result<null>> 
     await openSession(int(openingCash));
     return null;
   });
-  revalidatePath("/cash");
+  revalidatePath("/", "layout");
   return result;
 }
 
@@ -39,7 +39,7 @@ export async function drawerOutAction(input: {
     });
     return null;
   });
-  revalidatePath("/cash");
+  revalidatePath("/", "layout");
   return result;
 }
 
@@ -52,7 +52,7 @@ export async function closeDayAction(
     const session = await closeSession(int(countedCash), String(note));
     return { id: session.id };
   });
-  revalidatePath("/cash");
+  revalidatePath("/", "layout");
   return result;
 }
 

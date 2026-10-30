@@ -11,6 +11,7 @@ import { formatDateTime, formatRs } from "@/lib/format";
 import { UNIT_LABELS } from "@/lib/units";
 import { validateQty } from "@/lib/units";
 import type { PosVariant } from "@/server/services/sales";
+import { useConfirm } from "@/components/ui/confirm";
 
 type Held = Awaited<ReturnType<typeof listHeldAction>>[number];
 type Recent = Awaited<ReturnType<typeof recentBillsAction>>[number];
@@ -26,6 +27,7 @@ export function HeldBillsDialog({
   onResume: (id: string) => void;
   onChanged: () => void;
 }) {
+  const confirm = useConfirm();
   const [bills, setBills] = useState<Held[] | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -38,9 +40,14 @@ export function HeldBillsDialog({
     };
   }, [open]);
 
-  const discard = (bill: Held) => {
-    if (!confirm(`Discard the held bill of ${formatRs(bill.total)}? This cannot be undone.`))
-      return;
+  const discard = async (bill: Held) => {
+    const ok = await confirm({
+      title: "Discard this held bill?",
+      message: `The held bill of ${formatRs(bill.total)} is removed. This cannot be undone.`,
+      confirmLabel: "Discard bill",
+      tone: "danger",
+    });
+    if (!ok) return;
     startTransition(async () => {
       await discardHeldAction(bill.id);
       setBills(await listHeldAction());
@@ -120,9 +127,15 @@ export function RecentBillsDialog({
       {bills === null ? (
         <p className="text-sm text-gray-500">Loading…</p>
       ) : bills.length === 0 ? (
-        <p className="text-sm text-gray-500">No bills yet today.</p>
+        <p className="text-sm text-gray-500">
+          No completed bills yet today. Held bills are under <strong>Held</strong>.
+        </p>
       ) : (
         <div className="max-h-[60vh] overflow-y-auto">
+          <p className="mb-2 text-xs text-gray-500">
+            Completed bills only. Held bills are under <strong>Held</strong> and get a bill number
+            when they are completed.
+          </p>
           <Table>
             <THead>
               <tr>
@@ -139,7 +152,7 @@ export function RecentBillsDialog({
                   <TD className="font-semibold">#{bill.billNo}</TD>
                   <TD className="text-xs whitespace-nowrap">{formatDateTime(bill.completedAt)}</TD>
                   <TD>{bill.customerName}</TD>
-                  <TD className="text-right">{formatRs(bill.total)}</TD>
+                  <TD className="text-right whitespace-nowrap">{formatRs(bill.total)}</TD>
                   <TD className="text-right">
                     <Button size="sm" variant="secondary" onClick={() => onReprint(bill.id)}>
                       <Printer className="size-4" aria-hidden /> Reprint

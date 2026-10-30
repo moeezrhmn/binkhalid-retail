@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 
   /* Bin Khalid brand: dark green sidebar, gold accent, white cards */
@@ -17,6 +17,11 @@
   --color-gold-400: #e2c060;
   --color-gold-500: #c9a227;
   --color-gold-600: #a6841c;
+
+  /* Sidebar rail and the raised white pill used on it */
+  --color-rail: #ebebeb;
+  --color-page: #f1f1f1;
+  --shadow-pill: 0 1px 0 rgb(0 0 0 / 0.08), 0 0 0 1px rgb(0 0 0 / 0.05);
 
   /* Chart marks: brand green, validated for chroma, lightness and 3:1 contrast on white */
   --color-chart: #1a7f55;
@@ -44,8 +49,10 @@
 }
 
 body {
-  background: var(--color-gray-50);
+  background: var(--color-page);
   color: var(--color-gray-900);
+  /* Same-width digits, so prices, totals and stock line up in columns. */
+  font-variant-numeric: tabular-nums;
 }
 
 @media print {

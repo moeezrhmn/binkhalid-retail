@@ -3,7 +3,8 @@ import { cn } from "@/lib/cn";
 
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="w-full overflow-x-auto">
+    // relative: keeps absolutely positioned children (sr-only labels) inside the scroll box.
+    <div className="relative w-full overflow-x-auto">
       <table className={cn("w-full text-left text-sm", className)} {...props} />
     </div>
   );

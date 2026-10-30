@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import { getCurrentUser } from "@/lib/auth";
-import { rangeFromParams, rangeLabel } from "@/lib/date-filter";
+import { rangeLabel } from "@/lib/date-filter";
+import { resolvePeriod } from "@/lib/period";
 import { shopDate, toYmd } from "@/lib/dates";
 import { formatDateTime } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
@@ -27,7 +28,7 @@ export async function GET(request: Request) {
   const meta = REPORTS.find((r) => r.key === params.get("report"));
   if (!meta) return new Response("Unknown report", { status: 400 });
   const key = meta.key as ReportKey;
-  const { range } = rangeFromParams({
+  const { range } = await resolvePeriod({
     period: params.get("period") ?? undefined,
     from: params.get("from") ?? undefined,
     to: params.get("to") ?? undefined,

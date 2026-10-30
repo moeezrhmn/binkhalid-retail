@@ -12,6 +12,7 @@ import {
 } from "@/server/services/cash";
 import { createCustomer, receivePayment } from "@/server/services/customers";
 import { createReturn } from "@/server/services/returns";
+import { sidebarStatus } from "@/server/services/sidebar";
 import {
   completeSale,
   discardHeldSale,
@@ -535,5 +536,36 @@ describe("timestamps", () => {
     expect((await db.supplier.findUniqueOrThrow({ where: { id: supplier.id } })).createdAt).toEqual(
       when,
     );
+  });
+});
+
+describe("sidebar status", () => {
+  it("shows staff the day only, and admins the drawer and low stock too", async () => {
+    const fx = await shopFixture({ openDay: false });
+    expect(await sidebarStatus(false)).toEqual({
+      day: { open: false, since: null },
+      expectedCash: null,
+      lowStock: null,
+    });
+
+    await openSession(5000);
+    const before = await sidebarStatus(true);
+    expect(before.day).toEqual({ open: true, since: expect.stringMatching(/\d:\d\d [ap]m$/) });
+    expect(before.expectedCash).toBe(5000);
+
+    // Black caps: 10 in stock, minimum 2. Selling 8 makes them low.
+    await completeSale(
+      {
+        customerId: fx.customer.id,
+        lines: [{ variantId: fx.black.id, qty: "8", discount: 0 }],
+        billDiscount: 0,
+        payments: [{ method: "CASH", amount: 5200 }],
+      },
+      fx.user.id,
+    );
+    const after = await sidebarStatus(true);
+    expect(after.expectedCash).toBe(10200);
+    expect(after.lowStock).toBe(before.lowStock! + 1);
+    expect(await sidebarStatus(false)).toMatchObject({ expectedCash: null, lowStock: null });
   });
 });

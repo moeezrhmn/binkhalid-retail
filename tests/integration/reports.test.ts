@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { todayRange, type DateRange } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { createReturn } from "@/server/services/returns";
-import { buildReport, salesByDay, salesTotals } from "@/server/services/reports";
+import { buildReport, profitByDay, salesByDay, salesTotals } from "@/server/services/reports";
 import { completeSale } from "@/server/services/sales";
 import { shopFixture } from "./fixtures";
 
@@ -158,5 +158,30 @@ describe("reports", () => {
     expect(await salesTotals(todayRange(new Date("2026-10-23T10:00:00Z")))).toMatchObject({
       netSales: 650,
     });
+  });
+
+  it("charts add up to the tables they sit above", async () => {
+    await tradingDay();
+    const today = todayRange();
+
+    const profit = await buildReport("profit", today);
+    const days = await profitByDay(today);
+    expect(days.reduce((s, d) => s + d.value, 0)).toBe(profit.totals!.profit);
+    expect(profit.visual!.tiles.find((t) => t.label === "Profit")!.value).toBe(399);
+
+    const byProduct = await buildReport("sales-by-product", today);
+    expect(byProduct.visual!.chart).toMatchObject({ kind: "bars" });
+    expect(byProduct.visual!.tiles[0].value).toBe(byProduct.totals!.sales);
+  });
+
+  it("cash flow tiles count money only, not udhaar", async () => {
+    await tradingDay();
+    const today = todayRange();
+    // Cash 1200 + card 499 in, 600 cash refunded; the 500 on udhaar is left out.
+    const all = await buildReport("cash-flow", today);
+    expect(all.visual!.tiles.map((t) => t.value)).toEqual([1699, 600, 1099]);
+    // Picking udhaar on purpose shows it.
+    const udhaar = await buildReport("cash-flow", today, { method: "CREDIT" });
+    expect(udhaar.visual!.tiles[0].value).toBe(500);
   });
 });

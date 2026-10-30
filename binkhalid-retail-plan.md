@@ -204,7 +204,7 @@ When the admin creates a product, they pick a category, the attribute fields app
 
 ## 6. Modules and screens
 
-Sidebar navigation: Dashboard, POS / Billing, Sales (bill history, reprint, returns), Cash Register, Products, Barcode Labels, Inventory, Customers, Reports, Settings (shop details, receipt text, label size, staff accounts). Staff users see only POS / Billing. A reference mockup image of all screens exists (`bin-khalid-screens.jpg`). Follow its layout and style, which is a dark green sidebar with a gold active item and clean white cards, but do not copy its sample data.
+Sidebar navigation: Dashboard, POS / Billing, Sales (bill history, reprint, returns), Cash Register, Products, Barcode Labels, Inventory, Customers, Reports, Settings (shop details, receipt text, label size, staff accounts). Staff users see only POS / Billing. A reference mockup image of all screens exists (`bin-khalid-screens.jpg`). It was the starting point (dark green sidebar, gold active item, white cards); the sidebar is now a light rail with sections, a white active pill with a gold bar and the brand green and gold for accents (Phase 6). Do not copy the mockup's sample data.
 
 ### 6.1 Login
 
@@ -304,11 +304,11 @@ The client enters hundreds of products by hand, with no import. Entry speed is a
 
 ### 6.6 Dashboard and reports
 
-- Date range controls: Today, This week, This month, custom.
+- Date range controls: Today, This week, This month, custom. This month is the default; the last choice is remembered (one shared choice for Dashboard, Sales and Reports) across page changes and refreshes.
 - KPIs: sales, number of bills, profit (sale price minus snapshot cost), credit outstanding.
 - Charts: sales over the last 7 days, sales by category.
 - Tables: top-selling products, low-stock alerts.
-- Reports: sales by product, by category, by payment method, **by staff member**, top-selling products, **slow-moving products** (lowest or no sales in the range, with stock still on hand), profit report, current stock report, low-stock report, **daily cash summary** (opening cash, cash sales, udhaar received, other methods, credit given, refunds, cash out, expenses, expected cash, counted cash, difference), **cash flow report** (every `CashFlow` row in the range, filterable by type and method).
+- Reports: sales by product, by category, by payment method, **by staff member**, top-selling products, **slow-moving products** (lowest or no sales in the range, with stock still on hand), profit report, current stock report, low-stock report, **daily cash summary** (opening cash, cash sales, udhaar received, other methods, credit given, refunds, cash out, expenses, expected cash, counted cash, difference), **cash flow report** (every `CashFlow` row in the range, filterable by type and method). Each report shows summary tiles and, where it helps, one chart above the full table; Excel export holds the table only.
 - Export to Excel and print-friendly PDF for each report.
 - Returned items must be deducted correctly in all totals.
 
@@ -391,14 +391,31 @@ Changes requested after Phase 4. These replace the earlier "one admin only" rule
 
 ### Phase 6: Polish and launch
 
-- [ ] Empty states, loading states, error messages, confirm dialogs for destructive actions
+#### Part 1: Polish (built in this repo)
+
+- [x] Styled confirm dialogs for every destructive or irreversible action (replace the browser `confirm()`)
+- [x] Loading, error and not-found screens inside the app shell, plus a fallback if the whole app fails
+- [x] Empty states checked on every list; "the day is closed" notice wherever money would move, with Open the day / Reopen the last day
+- [x] Phone and tablet checks: no page scrolls sideways at 390 px or 768 px
+- [x] Branding: BK icon, Next.js template files removed; Inter font with same-width digits
+- [x] Security headers (CSP, framing, sniffing, referrer, permissions); HSTS is added in the reverse proxy
+- [x] Sample products only on request (`npm run db:seed:sample`), never on the shop's server
+- [x] Date filters default to This month and remember the last choice
+- [x] Sidebar: light rail with sections, live cash-day status and low-stock badge, sub-pages of the open section, folds to an icon rail (`[` key, remembered)
+- [x] Reports: summary tiles and one chart above each table where a chart helps (tables, Excel export and print unchanged; print includes the chart)
+- [x] Raised look shared with the white buttons: the active sidebar item and every card / widget on the pages (light ring and darker bottom edge)
+- [x] Loading line: a thin gold line at the top while the next page loads (links, tabs, sidebar, report and date filters, search forms); hidden for navigations under about 0.1 s, downloads and print links
+- [ ] Final browser check with sample data on every detail and print page
+
+#### Part 2: Deployment and launch (done by the developer on the server)
+
 - [ ] Set up and test the client's barcode scanner, label printer and receipt printer at the shop. Integration stays model-independent:
   - **Scanner:** read as keyboard input.
   - **Printers:** use the browser print with the model's own driver. Adjust the label and receipt sizes in Settings to match the actual paper.
 - [ ] Production setup on the VPS:
   - PM2 with `ecosystem.config.cjs`: restart on crash and after a server reboot (`pm2 startup` + `pm2 save`).
-  - Environment variables in `.env` on the server.
-  - HTTPS through the reverse proxy.
+  - Environment variables in `.env` on the server; remove `ADMIN_PASSWORD` after the first seed.
+  - HTTPS through the reverse proxy, with `Strict-Transport-Security`.
   - Each release runs `npm ci`, `npm run db:deploy`, `npm run build`, `pm2 reload`.
 - [ ] Daily database backup script (`pg_dump`) that copies backups and product images off the server, plus a backup restore test
 - [ ] Launch walkthrough with the client
@@ -425,6 +442,7 @@ After launch: 15 days of free bug fixes. New features or changes after that are 
   - Every button visibly presses in when clicked.
   - Semibold labels and 8px corners.
   - The shadows are the `--shadow-btn*` tokens in `app/globals.css`.
+  - Cards and widgets use exactly the white button's edge (`--shadow-btn`) through the shared `Card` component / `cardClasses`, drawn above the content so tables never hide it; the active sidebar item uses it too. No one-off borders or shadows on page surfaces.
 - Accessible markup: real `<button>`, `<label>`, visible focus styles.
 - No secrets in the repo. Use `.env` with a committed `.env.example`.
 - Small commits, made directly on `main` for now. Tag the end of each phase (`phase-1`, `phase-2`, …). Update the checklist in this file as items are done.

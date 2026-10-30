@@ -14,6 +14,7 @@ import type { DayStatus } from "@/server/services/cash";
 import { DayClosedNotice } from "@/components/cash/day-closed-notice";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { cardClasses } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import {
@@ -34,6 +35,7 @@ import type { CustomerOption } from "@/server/services/customers";
 import type { PosVariant } from "@/server/services/sales";
 import { CustomerPicker } from "./customer-picker";
 import { HeldBillsDialog, QtyDialog, RecentBillsDialog } from "./pos-dialogs";
+import { useConfirm } from "@/components/ui/confirm";
 
 type Line = { variant: PosVariant; qty: string; discount: string; discountAuto: boolean };
 type Split = { method: SalePaymentMethod; amount: string };
@@ -94,6 +96,7 @@ export function PosScreen({
   day: DayStatus;
   isAdmin: boolean;
 }) {
+  const confirm = useConfirm();
   const dayOpen = day.open;
   const router = useRouter();
   const scanRef = useRef<HTMLInputElement>(null);
@@ -173,7 +176,7 @@ export function PosScreen({
   ].filter(Boolean) as string[];
 
   // ----- adding items -----
-  const addVariant = (variant: PosVariant, qty?: string) => {
+  const addVariant = async (variant: PosVariant, qty?: string) => {
     setMatches([]);
     setLastSale(null);
     if (!variant.isActive) {
@@ -191,13 +194,12 @@ export function PosScreen({
     const stockMilli = qtyToMilli(variant.stockQty);
     if (newQtyMilli > stockMilli) {
       const left = formatQty(variant.stockQty);
-      if (
-        !confirm(
-          `${variant.name}${variant.label ? ` · ${variant.label}` : ""}: only ${left} in stock. Sell anyway?`,
-        )
-      ) {
-        return focusScan();
-      }
+      const ok = await confirm({
+        title: "Sell more than the stock?",
+        message: `${variant.name}${variant.label ? ` · ${variant.label}` : ""}: only ${left} in stock.`,
+        confirmLabel: "Sell anyway",
+      });
+      if (!ok) return focusScan();
     }
     const newQty = String(newQtyMilli / 1000);
     setLines((list) => {
@@ -260,10 +262,15 @@ export function PosScreen({
       }),
     );
 
-  const step = (line: Line, delta: number) => {
+  const step = async (line: Line, delta: number) => {
     const next = Math.max(1, Number(line.qty) + delta);
     if (delta > 0 && qtyToMilli(String(next)) > qtyToMilli(line.variant.stockQty)) {
-      if (!confirm(`Only ${formatQty(line.variant.stockQty)} in stock. Sell anyway?`)) return;
+      const ok = await confirm({
+        title: "Sell more than the stock?",
+        message: `${line.variant.name}: only ${formatQty(line.variant.stockQty)} in stock.`,
+        confirmLabel: "Sell anyway",
+      });
+      if (!ok) return;
     }
     setLine(line.variant.id, { qty: String(next) });
   };
@@ -358,8 +365,17 @@ export function PosScreen({
     });
   };
 
-  const resume = (id: string) => {
-    if (lines.length > 0 && !confirm("This clears the bill on screen. Continue?")) return;
+  const resume = async (id: string) => {
+    if (
+      lines.length > 0 &&
+      !(await confirm({
+        title: "Resume the held bill?",
+        message: "The bill on screen is cleared. Hold it first to keep it.",
+        confirmLabel: "Clear and resume",
+        tone: "danger",
+      }))
+    )
+      return;
     startBusy(async () => {
       const result = await getHeldAction(id);
       setHeldOpen(false);
@@ -382,8 +398,17 @@ export function PosScreen({
     });
   };
 
-  const clearBill = () => {
-    if (lines.length > 0 && !confirm("Clear this bill?")) return;
+  const clearBill = async () => {
+    if (
+      lines.length > 0 &&
+      !(await confirm({
+        title: "Clear this bill?",
+        message: "All items on the bill are removed.",
+        confirmLabel: "Clear bill",
+        tone: "danger",
+      }))
+    )
+      return;
     reset();
     setFlash(null);
     focusScan();
@@ -541,150 +566,159 @@ export function PosScreen({
         ) : null}
         {flash ? <Alert tone={flash.tone}>{flash.text}</Alert> : null}
 
-        <div className="min-h-64 flex-1 overflow-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-          <table className="w-full text-left text-sm">
-            <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50 text-xs tracking-wide text-gray-600 uppercase">
-              <tr>
-                <th className="px-3 py-2 font-medium">Item</th>
-                <th className="px-3 py-2 text-right font-medium">Price</th>
-                <th className="px-3 py-2 text-center font-medium">Qty</th>
-                <th className="px-3 py-2 text-right font-medium">Discount</th>
-                <th className="px-3 py-2 text-right font-medium">Total</th>
-                <th className="w-8" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {lines.map((line, index) => {
-                const p = priced[index];
-                const whole = !allowsFraction(line.variant.unit);
-                const short =
-                  qtyToMilli(line.variant.stockQty) < (p.invalid ? 0 : qtyToMilli(line.qty));
-                return (
-                  <tr
-                    key={line.variant.id}
-                    className={cn(
-                      "transition-colors",
-                      highlight === line.variant.id && "bg-gold-300/30",
-                    )}
-                  >
-                    <td className="px-3 py-1.5">
-                      <div className="font-medium text-gray-900">
-                        {line.variant.name}
-                        {line.variant.label ? (
-                          <span className="font-normal text-gray-500"> · {line.variant.label}</span>
-                        ) : null}
-                      </div>
-                      <div className="font-mono text-xs text-gray-400">
-                        {line.variant.code}
-                        {short ? (
-                          <span className="ml-2 font-sans text-red-600">
-                            Over stock ({formatQty(line.variant.stockQty)} left)
-                          </span>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td className="px-3 py-1.5 text-right whitespace-nowrap">
-                      {formatRs(line.variant.price)}
-                    </td>
-                    <td className="px-3 py-1.5">
-                      <div className="flex items-center justify-center gap-1">
-                        {whole ? (
-                          <button
-                            type="button"
-                            aria-label="One less"
-                            onClick={() => step(line, -1)}
-                            className="rounded-md p-1 text-gray-500 hover:bg-gray-100"
-                          >
-                            <Minus className="size-4" />
-                          </button>
-                        ) : null}
-                        <Input
-                          aria-label={`Quantity of ${line.variant.code}`}
-                          inputMode="decimal"
-                          value={line.qty}
-                          onChange={(e) => setLine(line.variant.id, { qty: e.target.value })}
-                          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), focusScan())}
-                          aria-invalid={p.invalid ? true : undefined}
-                          className="h-8 w-16 text-center"
-                        />
-                        {whole ? (
-                          <button
-                            type="button"
-                            aria-label="One more"
-                            onClick={() => step(line, 1)}
-                            className="rounded-md p-1 text-gray-500 hover:bg-gray-100"
-                          >
-                            <Plus className="size-4" />
-                          </button>
+        <div className={cn(cardClasses, "flex min-h-64 flex-1 flex-col")}>
+          <div className="min-h-0 flex-1 overflow-auto rounded-[inherit]">
+            <table className="w-full text-left text-sm">
+              <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50 text-xs tracking-wide text-gray-600 uppercase">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Item</th>
+                  <th className="px-3 py-2 text-right font-medium">Price</th>
+                  <th className="px-3 py-2 text-center font-medium">Qty</th>
+                  <th className="px-3 py-2 text-right font-medium">Discount</th>
+                  <th className="px-3 py-2 text-right font-medium">Total</th>
+                  <th className="w-8" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {lines.map((line, index) => {
+                  const p = priced[index];
+                  const whole = !allowsFraction(line.variant.unit);
+                  const short =
+                    qtyToMilli(line.variant.stockQty) < (p.invalid ? 0 : qtyToMilli(line.qty));
+                  return (
+                    <tr
+                      key={line.variant.id}
+                      className={cn(
+                        "transition-colors",
+                        highlight === line.variant.id && "bg-gold-300/30",
+                      )}
+                    >
+                      <td className="px-3 py-1.5">
+                        <div className="font-medium text-gray-900">
+                          {line.variant.name}
+                          {line.variant.label ? (
+                            <span className="font-normal text-gray-500">
+                              {" "}
+                              · {line.variant.label}
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="font-mono text-xs text-gray-400">
+                          {line.variant.code}
+                          {short ? (
+                            <span className="ml-2 font-sans text-red-600">
+                              Over stock ({formatQty(line.variant.stockQty)} left)
+                            </span>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-3 py-1.5 text-right whitespace-nowrap">
+                        {formatRs(line.variant.price)}
+                      </td>
+                      <td className="px-3 py-1.5">
+                        <div className="flex items-center justify-center gap-1">
+                          {whole ? (
+                            <button
+                              type="button"
+                              aria-label="One less"
+                              onClick={() => step(line, -1)}
+                              className="rounded-md p-1 text-gray-500 hover:bg-gray-100"
+                            >
+                              <Minus className="size-4" />
+                            </button>
+                          ) : null}
+                          <Input
+                            aria-label={`Quantity of ${line.variant.code}`}
+                            inputMode="decimal"
+                            value={line.qty}
+                            onChange={(e) => setLine(line.variant.id, { qty: e.target.value })}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" && (e.preventDefault(), focusScan())
+                            }
+                            aria-invalid={p.invalid ? true : undefined}
+                            className="h-8 w-16 text-center"
+                          />
+                          {whole ? (
+                            <button
+                              type="button"
+                              aria-label="One more"
+                              onClick={() => step(line, 1)}
+                              className="rounded-md p-1 text-gray-500 hover:bg-gray-100"
+                            >
+                              <Plus className="size-4" />
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-400">
+                              {UNIT_LABELS[line.variant.unit].toLowerCase()}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-1.5 text-right">
+                        {editingDiscount === line.variant.id || toInt(line.discount) > 0 ? (
+                          <Input
+                            aria-label={`Discount on ${line.variant.code} in rupees`}
+                            inputMode="numeric"
+                            value={line.discount}
+                            autoFocus={editingDiscount === line.variant.id}
+                            onChange={(e) =>
+                              setLine(line.variant.id, {
+                                discount: e.target.value.replace(/[^\d]/g, ""),
+                                discountAuto: false,
+                              })
+                            }
+                            onBlur={() => setEditingDiscount(null)}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" &&
+                              (e.preventDefault(), setEditingDiscount(null), focusScan())
+                            }
+                            className="ml-auto h-8 w-20 text-right"
+                          />
                         ) : (
-                          <span className="text-xs text-gray-400">
-                            {UNIT_LABELS[line.variant.unit].toLowerCase()}
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setEditingDiscount(line.variant.id)}
+                            className="text-xs text-brand-700 hover:underline"
+                          >
+                            + Discount
+                          </button>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-1.5 text-right">
-                      {editingDiscount === line.variant.id || toInt(line.discount) > 0 ? (
-                        <Input
-                          aria-label={`Discount on ${line.variant.code} in rupees`}
-                          inputMode="numeric"
-                          value={line.discount}
-                          autoFocus={editingDiscount === line.variant.id}
-                          onChange={(e) =>
-                            setLine(line.variant.id, {
-                              discount: e.target.value.replace(/[^\d]/g, ""),
-                              discountAuto: false,
-                            })
-                          }
-                          onBlur={() => setEditingDiscount(null)}
-                          onKeyDown={(e) =>
-                            e.key === "Enter" &&
-                            (e.preventDefault(), setEditingDiscount(null), focusScan())
-                          }
-                          className="ml-auto h-8 w-20 text-right"
-                        />
-                      ) : (
+                      </td>
+                      <td className="px-3 py-1.5 text-right font-semibold whitespace-nowrap">
+                        {formatRs(p.lineTotal)}
+                      </td>
+                      <td className="pr-2">
                         <button
                           type="button"
-                          onClick={() => setEditingDiscount(line.variant.id)}
-                          className="text-xs text-brand-700 hover:underline"
+                          aria-label={`Remove ${line.variant.code}`}
+                          onClick={() => {
+                            setLines((list) =>
+                              list.filter((l) => l.variant.id !== line.variant.id),
+                            );
+                            focusScan();
+                          }}
+                          className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600"
                         >
-                          + Discount
+                          <Trash2 className="size-4" />
                         </button>
-                      )}
-                    </td>
-                    <td className="px-3 py-1.5 text-right font-semibold whitespace-nowrap">
-                      {formatRs(p.lineTotal)}
-                    </td>
-                    <td className="pr-2">
-                      <button
-                        type="button"
-                        aria-label={`Remove ${line.variant.code}`}
-                        onClick={() => {
-                          setLines((list) => list.filter((l) => l.variant.id !== line.variant.id));
-                          focusScan();
-                        }}
-                        className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {lines.length === 0 ? (
-            <p className="px-4 py-16 text-center text-sm text-gray-400">
-              Scan a barcode to start the bill.
-            </p>
-          ) : null}
-          <div ref={cartEndRef} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {lines.length === 0 ? (
+              <p className="px-4 py-16 text-center text-sm text-gray-400">
+                Scan a barcode to start the bill.
+              </p>
+            ) : null}
+            <div ref={cartEndRef} />
+          </div>
         </div>
       </section>
 
       {/* ---------- right: customer, totals, payment ---------- */}
-      <aside className="flex w-full shrink-0 flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm lg:w-96 lg:overflow-y-auto">
+      <aside className="flex w-full shrink-0 flex-col gap-3 rounded-lg bg-white p-3 shadow-btn lg:w-96 lg:overflow-y-auto">
         <div className="space-y-1">
           <p className="text-xs font-medium text-gray-600">Customer</p>
           <CustomerPicker

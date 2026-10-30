@@ -24,7 +24,11 @@ export const formatRsFull = (value: number) =>
 function niceStep(max: number) {
   const raw = max / 4;
   const power = 10 ** Math.floor(Math.log10(raw || 1));
-  return [1, 2, 2.5, 5, 10].map((m) => m * power).find((step) => step >= raw) ?? power * 10;
+  // Whole rupees only: never a step below Rs 1.
+  return Math.max(
+    1,
+    [1, 2, 2.5, 5, 10].map((m) => m * power).find((step) => step >= raw) ?? power * 10,
+  );
 }
 
 /** Column with a rounded data end and a square baseline end (handles negatives). */
@@ -60,7 +64,8 @@ export function ColumnChart({ data, label }: { data: ColumnDatum[]; label: strin
 
   const max = Math.max(0, ...data.map((d) => d.value));
   const min = Math.min(0, ...data.map((d) => d.value));
-  const step = niceStep(Math.max(max - min, 1));
+  // With no sales at all, a Rs 0–1,000 scale reads better than Rs 0–1.
+  const step = niceStep(max - min || 1000);
   const top = Math.ceil(max / step) * step || step;
   const bottom = Math.floor(min / step) * step;
   const plotW = Math.max(0, width - PAD.left - PAD.right);

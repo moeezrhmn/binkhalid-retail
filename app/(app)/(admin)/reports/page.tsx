@@ -4,12 +4,14 @@ import { FileSpreadsheet } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { PeriodFilter } from "@/components/period-filter";
 import { PrintButton } from "@/components/print-button";
+import { ReportVisualView } from "@/components/reports/report-visual";
 import { ReportTableView } from "@/components/reports/report-table";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/cn";
-import { rangeFromParams, rangeLabel } from "@/lib/date-filter";
+import { resolvePeriod } from "@/lib/period";
+import { rangeLabel } from "@/lib/date-filter";
 import { getSettings } from "@/lib/settings";
 import { requireAdmin } from "@/lib/auth";
 import {
@@ -30,7 +32,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
   const params = await searchParams;
   const key = (REPORTS.find((r) => r.key === one(params.report))?.key ??
     "sales-by-product") as ReportKey;
-  const { period, range, from, to } = rangeFromParams({
+  const { period, range, from, to } = await resolvePeriod({
     period: one(params.period),
     from: one(params.from),
     to: one(params.to),
@@ -41,7 +43,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
 
   const query = new URLSearchParams();
   query.set("report", key);
-  if (period !== "today") query.set("period", period);
+  query.set("period", period);
   if (from) query.set("from", from);
   if (to) query.set("to", to);
   if (key === "cash-flow" && filters.type) query.set("type", filters.type);
@@ -64,6 +66,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
             <>
               <a
                 href={`/reports/export?${query.toString()}`}
+                data-no-progress
                 className={buttonClasses({ variant: "secondary" })}
               >
                 <FileSpreadsheet className="size-4" aria-hidden /> Excel
@@ -74,7 +77,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
         />
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[13rem_1fr] print:block">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[13rem_minmax(0,1fr)] print:block">
         <nav aria-label="Reports" className="print:hidden">
           <ul className="flex gap-1 overflow-x-auto lg:flex-col">
             {REPORTS.map((r) => (
@@ -83,10 +86,11 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
                   href={keep(r.key)}
                   aria-current={r.key === key ? "page" : undefined}
                   className={cn(
-                    "block rounded-md px-2.5 py-1.5 text-sm whitespace-nowrap",
+                    "block rounded-lg px-2.5 py-1.5 text-sm whitespace-nowrap",
+                    // Selected report: the raised look of the primary button.
                     r.key === key
-                      ? "bg-brand-700 font-medium text-white"
-                      : "text-gray-700 hover:bg-gray-100",
+                      ? "bg-brand-700 bg-linear-to-b from-white/10 to-transparent font-semibold text-white shadow-btn-primary"
+                      : "text-gray-700 hover:bg-black/5",
                   )}
                 >
                   {r.label}
@@ -148,14 +152,15 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
             ) : null}
           </div>
 
+          <div>
+            <p className="hidden text-xs text-gray-500 print:block">{settings.shopName}</p>
+            <h2 className="text-base font-semibold text-gray-900">{report.title}</h2>
+            <p className="text-xs text-gray-500">
+              {undated ? "As of now" : rangeLabel(range)} · {report.description}
+            </p>
+          </div>
+          {report.visual ? <ReportVisualView visual={report.visual} /> : null}
           <Card>
-            <div className="border-b border-gray-100 px-4 py-3">
-              <p className="hidden text-xs text-gray-500 print:block">{settings.shopName}</p>
-              <h2 className="text-base font-semibold text-gray-900">{report.title}</h2>
-              <p className="text-xs text-gray-500">
-                {undated ? "As of now" : rangeLabel(range)} · {report.description}
-              </p>
-            </div>
             <ReportTableView report={report} />
           </Card>
         </div>

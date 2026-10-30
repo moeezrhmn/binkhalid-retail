@@ -1,8 +1,21 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
-import { PERIODS, type Period } from "@/lib/date-filter";
+import {
+  encodePeriod,
+  PERIOD_COOKIE,
+  PERIODS,
+  type Period,
+  type PeriodParams,
+} from "@/lib/date-filter";
+
+/** Saved for a year, so the choice survives refreshes and moving between pages. */
+function remember(params: PeriodParams) {
+  document.cookie = `${PERIOD_COOKIE}=${encodePeriod(params)}; path=/; max-age=31536000; samesite=lax`;
+}
 
 /** Today / This week / This month / Custom range, as links and a small GET form. */
 export function PeriodFilter({
@@ -21,9 +34,8 @@ export function PeriodFilter({
   const href = (value: Period) => {
     const search = new URLSearchParams();
     for (const [key, v] of Object.entries(extra)) if (v) search.set(key, v);
-    if (value !== "today") search.set("period", value);
-    const text = search.toString();
-    return text ? `${basePath}?${text}` : basePath;
+    search.set("period", value);
+    return `${basePath}?${search.toString()}`;
   };
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -32,6 +44,7 @@ export function PeriodFilter({
           <Link
             key={p.value}
             href={href(p.value)}
+            onClick={() => remember({ period: p.value })}
             className={cn(
               "rounded-md px-3 py-1 text-sm font-medium",
               period === p.value
@@ -43,7 +56,18 @@ export function PeriodFilter({
           </Link>
         ))}
       </div>
-      <form action={basePath} className="flex items-center gap-1.5">
+      <form
+        action={basePath}
+        className="flex items-center gap-1.5"
+        onSubmit={(e) => {
+          const data = new FormData(e.currentTarget);
+          remember({
+            period: "custom",
+            from: String(data.get("from") ?? ""),
+            to: String(data.get("to") ?? ""),
+          });
+        }}
+      >
         <input type="hidden" name="period" value="custom" />
         {Object.entries(extra).map(([key, v]) =>
           v ? <input key={key} type="hidden" name={key} value={v} /> : null,

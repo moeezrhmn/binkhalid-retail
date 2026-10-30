@@ -98,8 +98,13 @@ describe("access control", () => {
     const routes = files("app", /^route\.ts$/);
     expect(routes.sort()).toEqual([
       "app/(app)/(admin)/reports/export/route.ts",
+      "app/(app)/sidebar-status/route.ts",
       "app/uploads/products/[file]/route.ts",
     ]);
+    // Staff get the day status only, never the drawer amount or stock counts.
+    expect(read("app/(app)/sidebar-status/route.ts")).toMatch(
+      /await getCurrentUser\(\)[\s\S]*sidebarStatus\(user\.type === "ADMIN"\)/,
+    );
     expect(read("app/(app)/(admin)/reports/export/route.ts")).toMatch(/user\.type !== "ADMIN"/);
     expect(read("app/uploads/products/[file]/route.ts")).toMatch(/await getCurrentUser\(\)/);
   });

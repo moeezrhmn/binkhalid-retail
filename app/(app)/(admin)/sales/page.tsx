@@ -8,7 +8,8 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { METHOD_LABELS } from "@/lib/cart";
-import { rangeFromParams } from "@/lib/date-filter";
+import { resolvePeriod } from "@/lib/period";
+import { periodQuery } from "@/lib/date-filter";
 import { formatDateTime, formatRs } from "@/lib/format";
 import { listSales } from "@/server/services/sales-history";
 import { requireAdmin } from "@/lib/auth";
@@ -22,14 +23,14 @@ export default async function SalesPage({ searchParams }: PageProps<"/sales">) {
   await requireAdmin();
   const params = await searchParams;
   const q = one(params.q)?.trim() ?? "";
-  const { period, range, from, to } = rangeFromParams({
+  const { period, range, from, to } = await resolvePeriod({
     period: one(params.period),
     from: one(params.from),
     to: one(params.to),
   });
   const page = Number(one(params.page)) || 1;
   const result = await listSales({ range, q, page });
-  const query = { q: q || undefined, period: period === "today" ? undefined : period, from, to };
+  const query = { q: q || undefined, ...periodQuery(period, from, to) };
 
   return (
     <div className="space-y-3">
@@ -53,7 +54,7 @@ export default async function SalesPage({ searchParams }: PageProps<"/sales">) {
             aria-label="Search bills"
             className="pl-8"
           />
-          {period !== "today" ? <input type="hidden" name="period" value={period} /> : null}
+          <input type="hidden" name="period" value={period} />
           {from ? <input type="hidden" name="from" value={from} /> : null}
           {to ? <input type="hidden" name="to" value={to} /> : null}
         </form>

@@ -223,7 +223,8 @@ async function seedCategories() {
 }
 
 async function seedSampleProducts() {
-  if (process.env.SEED_SAMPLE_DATA === "false" || process.env.NODE_ENV === "production") return;
+  // Opt-in (npm run db:seed:sample), so the shop's server never gets sample products.
+  if (process.env.SEED_SAMPLE_DATA !== "true" || process.env.NODE_ENV === "production") return;
   if ((await db.product.count()) > 0) {
     console.log("Products already exist, skipping sample products.");
     return;

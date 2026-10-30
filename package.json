@@ -15,6 +15,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "db:seed:sample": "SEED_SAMPLE_DATA=true prisma db seed",
     "postinstall": "prisma generate",
     "test:db": "vitest run --config vitest.integration.config.mts"
   },
