@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/auth";
-import { barcodeSvg } from "@/lib/barcode";
+import { printerBarcode, printerQrCode } from "@/lib/barcode";
 import { formatRs } from "@/lib/format";
 import { MAX_LABEL_COPIES, MAX_LABEL_ITEMS } from "@/lib/labels";
 import { getSettings } from "@/lib/settings";
@@ -37,10 +37,20 @@ export default async function PrintLabelsPage({ searchParams }: PageProps<"/prin
     const variant = byId.get(id);
     return variant ? Array.from({ length: count }, () => variant) : [];
   });
-  const svgs = new Map(variants.map((variant) => [variant.id, barcodeSvg(variant.code)]));
-
   const width = settings.labelWidthMm;
   const height = settings.labelHeightMm;
+  const useQr = settings.labelCodeType !== "barcode";
+  // The QR code takes the right of the label: up to a third of its width and its
+  // full height inside the 1.2 mm top and bottom padding.
+  const qrMaxMm = Math.min(width * 0.34, height - 2.4);
+  const codes = new Map(
+    variants.map((variant) => [
+      variant.id,
+      useQr
+        ? { qr: printerQrCode(variant.code, settings.labelDpi, qrMaxMm) }
+        : { barcode: printerBarcode(variant.code, settings.labelDpi, width) },
+    ]),
+  );
 
   return (
     <>
@@ -68,37 +78,76 @@ export default async function PrintLabelsPage({ searchParams }: PageProps<"/prin
       </div>
 
       <div className="label-sheet flex flex-wrap gap-4 bg-gray-100 p-6">
-        {labels.map((variant, index) => (
-          <div
-            key={`${variant.id}-${index}`}
-            className="label flex flex-col overflow-hidden bg-white text-black shadow"
-            style={{ padding: "1.2mm 2mm", fontFamily: "Arial, Helvetica, sans-serif" }}
-          >
-            <div className="flex items-baseline justify-between" style={{ fontSize: "2.2mm" }}>
-              <span className="truncate">{settings.shopName}</span>
-              <span className="font-bold" style={{ fontSize: "3.4mm" }}>
-                {formatRs(variant.salePrice)}
-              </span>
-            </div>
-            <div className="truncate font-bold" style={{ fontSize: "2.8mm", lineHeight: 1.15 }}>
-              {variant.productName}
-            </div>
-            <div className="truncate" style={{ fontSize: "2.3mm", lineHeight: 1.15 }}>
-              {variant.variantText || " "}
-            </div>
+        {labels.map((variant, index) => {
+          const { qr, barcode } = codes.get(variant.id)!;
+          return qr ? (
             <div
-              className="min-h-0 flex-1"
-              style={{ margin: "0.6mm 0" }}
-              dangerouslySetInnerHTML={{ __html: svgs.get(variant.id)! }}
-            />
-            <div
-              className="text-center font-mono"
-              style={{ fontSize: "2.4mm", letterSpacing: "0.1mm" }}
+              key={`${variant.id}-${index}`}
+              className="label flex overflow-hidden bg-white text-black shadow"
+              style={{
+                padding: "1.2mm 2mm",
+                gap: "1.5mm",
+                fontFamily: "Arial, Helvetica, sans-serif",
+              }}
             >
-              {variant.code}
+              <div className="flex min-w-0 flex-1 flex-col" style={{ lineHeight: 1.15 }}>
+                <div className="truncate" style={{ fontSize: "2.2mm" }}>
+                  {settings.shopName}
+                </div>
+                <div className="line-clamp-2 font-bold" style={{ fontSize: "2.8mm" }}>
+                  {variant.productName}
+                </div>
+                <div className="truncate" style={{ fontSize: "2.3mm" }}>
+                  {variant.variantText}
+                </div>
+                <div className="mt-auto font-bold" style={{ fontSize: "3.6mm" }}>
+                  {formatRs(variant.salePrice)}
+                </div>
+                <div className="truncate font-mono" style={{ fontSize: "2.2mm" }}>
+                  {variant.code}
+                </div>
+              </div>
+              {/* Exactly its size, so every square stays on whole printer dots. */}
+              <div
+                className="shrink-0 self-center"
+                style={{ width: `${qr.sizeMm}mm`, height: `${qr.sizeMm}mm` }}
+                dangerouslySetInnerHTML={{ __html: qr.svg }}
+              />
             </div>
-          </div>
-        ))}
+          ) : (
+            <div
+              key={`${variant.id}-${index}`}
+              className="label flex flex-col overflow-hidden bg-white text-black shadow"
+              style={{ padding: "1.2mm 2mm", fontFamily: "Arial, Helvetica, sans-serif" }}
+            >
+              <div className="flex items-baseline justify-between" style={{ fontSize: "2.2mm" }}>
+                <span className="truncate">{settings.shopName}</span>
+                <span className="font-bold" style={{ fontSize: "3.4mm" }}>
+                  {formatRs(variant.salePrice)}
+                </span>
+              </div>
+              <div className="truncate font-bold" style={{ fontSize: "2.8mm", lineHeight: 1.15 }}>
+                {variant.productName}
+              </div>
+              <div className="truncate" style={{ fontSize: "2.3mm", lineHeight: 1.15 }}>
+                {variant.variantText || " "}
+              </div>
+              {/* From the label's left edge (cancelling the 2 mm padding), exactly the
+                barcode's width, so the bars stay on the printer's dots. */}
+              <div
+                className="min-h-0 flex-1 self-start"
+                style={{ margin: "0.6mm 0 0.6mm -2mm", width: `${barcode!.widthMm}mm` }}
+                dangerouslySetInnerHTML={{ __html: barcode!.svg }}
+              />
+              <div
+                className="text-center font-mono"
+                style={{ fontSize: "2.4mm", letterSpacing: "0.1mm" }}
+              >
+                {variant.code}
+              </div>
+            </div>
+          );
+        })}
         {labels.length === 0 ? (
           <p className="text-sm text-gray-600">Nothing to print. Go back and pick some variants.</p>
         ) : null}

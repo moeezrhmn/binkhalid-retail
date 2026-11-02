@@ -23,6 +23,12 @@ export async function saveShopSettings(input: ShopSettings) {
       );
     }
   }
+  if (input.labelDpi !== 203 && input.labelDpi !== 300) {
+    throw new UserError("Pick the label printer resolution");
+  }
+  if (input.labelCodeType !== "qr" && input.labelCodeType !== "barcode") {
+    throw new UserError("Pick what labels carry the code as");
+  }
   const values: Record<keyof ShopSettings, string> = {
     shopName,
     shopAddress: input.shopAddress.trim().slice(0, 200),
@@ -31,6 +37,8 @@ export async function saveShopSettings(input: ShopSettings) {
     receiptFooter: input.receiptFooter.trim().slice(0, 200),
     labelWidthMm: String(input.labelWidthMm),
     labelHeightMm: String(input.labelHeightMm),
+    labelDpi: String(input.labelDpi),
+    labelCodeType: input.labelCodeType,
     receiptWidthMm: String(input.receiptWidthMm),
   };
   await db.$transaction(

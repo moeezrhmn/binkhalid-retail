@@ -9,6 +9,10 @@ export type ShopSettings = {
   receiptFooter: string;
   labelWidthMm: number;
   labelHeightMm: number;
+  /** Label printer resolution (203 or 300), so barcode bars line up with its dots. */
+  labelDpi: number;
+  /** What labels carry the code as: a QR code, or a line barcode for 1D-only scanners. */
+  labelCodeType: "qr" | "barcode";
   receiptWidthMm: number;
 };
 
@@ -20,10 +24,12 @@ const DEFAULTS: ShopSettings = {
   receiptFooter: "",
   labelWidthMm: 50,
   labelHeightMm: 30,
+  labelDpi: 203,
+  labelCodeType: "qr",
   receiptWidthMm: 80,
 };
 
-const NUMBER_KEYS = new Set(["labelWidthMm", "labelHeightMm", "receiptWidthMm"]);
+const NUMBER_KEYS = new Set(["labelWidthMm", "labelHeightMm", "labelDpi", "receiptWidthMm"]);
 
 export async function getSettings(): Promise<ShopSettings> {
   const rows = await db.setting.findMany();

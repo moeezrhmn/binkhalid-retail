@@ -14,6 +14,8 @@ const settingsSchema = z.object({
   receiptFooter: z.string(),
   labelWidthMm: z.coerce.number(),
   labelHeightMm: z.coerce.number(),
+  labelDpi: z.coerce.number(),
+  labelCodeType: z.enum(["qr", "barcode"]),
   receiptWidthMm: z.coerce.number(),
 });
 

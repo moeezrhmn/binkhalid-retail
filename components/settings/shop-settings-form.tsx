@@ -65,9 +65,37 @@ export function ShopSettingsForm({ initial }: { initial: ShopSettings }) {
 
       <Card className="space-y-3 p-4">
         <h2 className="text-sm font-semibold text-gray-900">Printing</h2>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-4">
           <Field label="Label width (mm)" inputMode="numeric" {...text("labelWidthMm")} />
           <Field label="Label height (mm)" inputMode="numeric" {...text("labelHeightMm")} />
+          <div className="space-y-1">
+            <label htmlFor="label-dpi" className="block text-xs font-medium text-gray-600">
+              Label printer resolution
+            </label>
+            <Select
+              id="label-dpi"
+              value={String(form.labelDpi)}
+              onChange={(e) => set({ labelDpi: Number(e.target.value) })}
+            >
+              <option value="203">203 dpi</option>
+              <option value="300">300 dpi</option>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="label-code" className="block text-xs font-medium text-gray-600">
+              Code on labels
+            </label>
+            <Select
+              id="label-code"
+              value={form.labelCodeType}
+              onChange={(e) =>
+                set({ labelCodeType: e.target.value === "barcode" ? "barcode" : "qr" })
+              }
+            >
+              <option value="qr">QR code (recommended)</option>
+              <option value="barcode">Line barcode, for 1D-only scanners</option>
+            </Select>
+          </div>
           <div className="space-y-1">
             <label htmlFor="receipt-width" className="block text-xs font-medium text-gray-600">
               Receipt paper width
