@@ -66,8 +66,18 @@ export function ShopSettingsForm({ initial }: { initial: ShopSettings }) {
       <Card className="space-y-3 p-4">
         <h2 className="text-sm font-semibold text-gray-900">Printing</h2>
         <div className="grid gap-3 sm:grid-cols-4">
-          <Field label="Label width (mm)" inputMode="numeric" {...text("labelWidthMm")} />
-          <Field label="Label height (mm)" inputMode="numeric" {...text("labelHeightMm")} />
+          <Field
+            label="Label width (mm)"
+            inputMode="numeric"
+            hint="Recommended 50 mm. The sticker itself, not the backing paper."
+            {...text("labelWidthMm")}
+          />
+          <Field
+            label="Label height (mm)"
+            inputMode="numeric"
+            hint="Recommended 25 mm. One sticker, without the gap."
+            {...text("labelHeightMm")}
+          />
           <div className="space-y-1">
             <label htmlFor="label-dpi" className="block text-xs font-medium text-gray-600">
               Label printer resolution
@@ -92,7 +102,7 @@ export function ShopSettingsForm({ initial }: { initial: ShopSettings }) {
                 set({ labelCodeType: e.target.value === "barcode" ? "barcode" : "qr" })
               }
             >
-              <option value="qr">QR code (recommended)</option>
+              <option value="qr">QR code (recommended, fast scanning)</option>
               <option value="barcode">Line barcode, for 1D-only scanners</option>
             </Select>
           </div>

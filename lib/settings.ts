@@ -23,7 +23,7 @@ const DEFAULTS: ShopSettings = {
   receiptHeader: "",
   receiptFooter: "",
   labelWidthMm: 50,
-  labelHeightMm: 30,
+  labelHeightMm: 25,
   labelDpi: 203,
   labelCodeType: "qr",
   receiptWidthMm: 80,

@@ -11,6 +11,18 @@ import { PrintButton } from "@/components/print-button";
 
 export const metadata: Metadata = { title: "Print labels" };
 
+/**
+ * Product name size on a QR label: smaller for long names, so more of the name
+ * fits in its 2 lines. Bold Arial averages about 0.6 em per character, and
+ * wrapping at spaces wastes some of each line.
+ */
+function nameFontMm(name: string, columnMm: number) {
+  for (const size of [2.8, 2.4]) {
+    if (name.length <= (columnMm / (size * 0.6)) * 2 * 0.85) return size;
+  }
+  return 2.1;
+}
+
 /** items=<variantId>:<copies>,<variantId>:<copies>,… */
 function parseItems(value: string | string[] | undefined) {
   if (typeof value !== "string") return [];
@@ -90,17 +102,28 @@ export default async function PrintLabelsPage({ searchParams }: PageProps<"/prin
                 fontFamily: "Arial, Helvetica, sans-serif",
               }}
             >
-              <div className="flex min-w-0 flex-1 flex-col" style={{ lineHeight: 1.15 }}>
+              <div
+                className="flex min-w-0 flex-1 flex-col justify-center"
+                style={{ lineHeight: 1.15 }}
+              >
                 <div className="truncate" style={{ fontSize: "2.2mm" }}>
                   {settings.shopName}
                 </div>
-                <div className="line-clamp-2 font-bold" style={{ fontSize: "2.8mm" }}>
+                {/* At most 2 lines, smaller for long names; a long word without spaces
+                    breaks instead of running off. The column is the label minus its
+                    padding, the gap and the QR code. */}
+                <div
+                  className="line-clamp-2 font-bold wrap-anywhere"
+                  style={{
+                    fontSize: `${nameFontMm(variant.productName, width - 4 - 1.5 - qr.sizeMm)}mm`,
+                  }}
+                >
                   {variant.productName}
                 </div>
                 <div className="truncate" style={{ fontSize: "2.3mm" }}>
                   {variant.variantText}
                 </div>
-                <div className="mt-auto font-bold" style={{ fontSize: "3.6mm" }}>
+                <div className="font-bold" style={{ fontSize: "3.6mm", marginTop: "2.2mm" }}>
                   {formatRs(variant.salePrice)}
                 </div>
                 <div className="truncate font-mono" style={{ fontSize: "2.2mm" }}>

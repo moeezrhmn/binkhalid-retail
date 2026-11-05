@@ -145,7 +145,7 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   receiptHeader: "",
   receiptFooter: "Thank you for shopping with us!",
   labelWidthMm: "50",
-  labelHeightMm: "30",
+  labelHeightMm: "25",
   labelDpi: "203",
   labelCodeType: "qr",
   receiptWidthMm: "80",
